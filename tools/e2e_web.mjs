@@ -131,6 +131,7 @@ check('supplier detail lists its synthetic inputs', (await ev('document.getEleme
 await go('#/documents');
 check('in the synthetic view the contracts banner says they are scored', (await ev('document.getElementById("view").textContent')).includes('these contracts are scored'));
 await go('#/trust');
+check('synthetic view: no input is labelled "No data" on Evidence & trust', (await ev('[...document.querySelectorAll("#view .badge")].filter(b => b.textContent.trim() === "No data").length')) === 0 && (await ev('[...document.querySelectorAll("#view .badge")].filter(b => b.textContent.trim() === "Synthetic").length')) >= 8);
 check('Evidence & trust lists every synthetic range with its basis', (await ev('document.getElementById("view").textContent')).includes('every invented value and its basis') && (await ev('[...document.querySelectorAll(".syn-tag")].filter(t => /^R\\d/.test(t.textContent.trim())).length')) >= 12);
 await ev('document.querySelector("[data-view=real]").click()'); await sleep(200);
 check('switching back restores the real split exactly', (await ev('JSON.stringify(PS.scenario("Normal", 1, 0).vials)')) === realSplit && !(await ev('document.getElementById("view").textContent')).includes('Synthetic view.'));

@@ -117,6 +117,10 @@
     "judgement": {
       "label": "Team setting",
       "plain": "A stated choice by the plan or the team, visible and adjustable."
+    },
+    "synthetic": {
+      "label": "Synthetic",
+      "plain": "Invented within an approved industry range, synthetic view only. Its range and source are listed on this page."
     }
   },
   "evidence_ledger": [
@@ -146,7 +150,12 @@
       "feeds": "C1 Cost",
       "level": "nodata",
       "source": "None",
-      "note": "Left out of the cost, so it is the same for every supplier."
+      "note": "Left out of the cost, so it is the same for every supplier.",
+      "synthetic": {
+        "level": "synthetic",
+        "source": "Ranges R3 and R5 (vial weight x air-freight rate by origin)",
+        "note": "$0.30-0.60 a vial, added to the official price."
+      }
     },
     {
       "input": "How shipments behave (training data)",
@@ -160,21 +169,36 @@
       "feeds": "C2 Late delivery",
       "level": "nodata",
       "source": "None",
-      "note": "Not guessed. Each supplier's score is averaged over real past shipments from its factory's country."
+      "note": "Not guessed. Each supplier's score is averaged over real past shipments from its factory's country.",
+      "synthetic": {
+        "level": "synthetic",
+        "source": "Ranges R1-R4",
+        "note": "Each supplier gets its own shipping mode (air), delivery terms and shipment size; the delivery model scores that profile."
+      }
     },
     {
       "input": "Each supplier's own delivery history",
       "feeds": "C2, probation",
       "level": "real",
       "source": "USAID SCMS delivery history",
-      "note": "None of the 11 has 5 or more past shipments of its own, so all are treated as new suppliers. This is about delivery history with buyers, not about whether they make carboplatin: that comes from the FDA product list and the drug labels."
+      "note": "None of the 11 has 5 or more past shipments of its own, so all are treated as new suppliers. This is about delivery history with buyers, not about whether they make carboplatin: that comes from the FDA product list and the drug labels.",
+      "synthetic": {
+        "level": "synthetic",
+        "source": "Ranges R10 and R11, using real US market share",
+        "note": "The 5 suppliers with at least 9% US market share get 6-24 past deliveries to this buyer at 80-95% on time; the other 6 stay new."
+      }
     },
     {
       "input": "Billing oddities (each supplier's own invoices)",
       "feeds": "C3 Billing",
       "level": "nodata",
       "source": "None (no supplier has its own invoices in the data)",
-      "note": "Set to 0 for every supplier, the plan's rule for new suppliers. Because it is the same for all, it has no effect: removing its 5% weight leaves every score, rank and vial unchanged."
+      "note": "Set to 0 for every supplier, the plan's rule for new suppliers. Because it is the same for all, it has no effect: removing its 5% weight leaves every score, rank and vial unchanged.",
+      "synthetic": {
+        "level": "synthetic",
+        "source": "Range R7",
+        "note": "Synthetic invoices for the 5 established suppliers with 1-4% errors; the billing model flags the odd lines. New suppliers keep the plan's 0."
+      }
     },
     {
       "input": "FDA inspection results",
@@ -202,28 +226,46 @@
       "feeds": "C4 Compliance",
       "level": "nodata",
       "source": "None (the 11 contracts are invented for testing)",
-      "note": "Not scored. The contract reader is shown as a demo only."
+      "note": "Not scored. The contract reader is shown as a demo only.",
+      "synthetic": {
+        "level": "synthetic",
+        "source": "Range R6: the 11 synthetic contracts",
+        "note": "Contract risk counts for 20% of compliance."
+      }
     },
     {
       "input": "Share of cargo exposed to Hormuz or Gulf airspace",
       "feeds": "C5 Route exposure",
       "level": "standin",
       "source": "UAE port volumes (Jebel Ali vs Khor Fakkan)",
-      "note": "One share, 0.85, for every origin. No evidence supports different shares by country."
+      "note": "One share, 0.85, for every origin. No evidence supports different shares by country.",
+      "synthetic": {
+        "level": "synthetic",
+        "source": "Range R9",
+        "note": "0.90-1.00 per factory for air cargo."
+      }
     },
     {
       "input": "Quality of each country's logistics",
       "feeds": "C5 Route exposure",
       "level": "real",
       "source": "World Bank Logistics Performance Index",
-      "note": "The only part of route exposure that differs between suppliers."
+      "note": "The only part of route exposure that differs between suppliers.",
+      "synthetic": {
+        "note": "Real data. In the synthetic view the route share (R9) also differs by factory, so it is no longer the only part that varies."
+      }
     },
     {
       "input": "Factory capacity",
       "feeds": "Order split",
       "level": "nodata",
       "source": "None",
-      "note": "Not public, so capacity never limits the split. The plan's share caps do."
+      "note": "Not public, so capacity never limits the split. The plan's share caps do.",
+      "synthetic": {
+        "level": "synthetic",
+        "source": "Range R8, using real US market share",
+        "note": "1,500-8,000 vials a month per factory; it limits the split."
+      }
     },
     {
       "input": "How much each mark counts (weights)",

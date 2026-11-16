@@ -19,3 +19,6 @@ venv/
 
 # Layer 3 / Layer 4 outputs are part of the committed snapshot (re-run the engines to refresh them)
 *Implementation Plan.pdf
+
+# team-internal handouts (carry the author's name) - shared directly, not via the public repo
+docs/PPT_Assumptions_and_Considerations.pdf

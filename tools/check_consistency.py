@@ -207,6 +207,19 @@ def main() -> int:
                    ("01_layer1_data_ingestion", "02_layer3_risk_engines", "03_layer4_decision")]))
     check("F8 notebook 03 ends with the numbers for the slides", "Numbers for the slides" in json.dumps(nb3))
 
+    # ------------------------------------------------------------------ G. evidence ledger per view
+    led = content["evidence_ledger"]
+    syn_led = [{**r, **r.get("synthetic", {})} for r in led]
+    filled = {"Freight cost to the UAE", "Shipping mode, terms and weight for UAE orders", "Supplier contracts",
+              "Billing oddities (each supplier's own invoices)", "Factory capacity"}
+    check("G1 synthetic view: every 'no data' input of the real view is filled by a synthetic range",
+          {r["input"] for r in led if r["level"] == "nodata"} <= {r["input"] for r in syn_led if r["level"] == "synthetic"}
+          and not any(r["level"] == "nodata" for r in syn_led) and filled <= {r["input"] for r in led if r["level"] == "nodata"})
+    rng_ids = set(pd.read_csv(ROOT / "synthetic/reference/synthetic_ranges.csv")["id"])
+    cited = set(re.findall(r"R\d+[a-c]?", " ".join(r["source"] for r in syn_led if r["level"] == "synthetic")))
+    check("G2 every range a synthetic ledger row cites exists in synthetic_ranges.csv",
+          bool(cited) and all(x in rng_ids or x + "a" in rng_ids for x in cited), f"{cited - rng_ids}")
+
     width = max(len(n) for n, _, _ in results)
     for n, ok, d in results:
         print(("  ok   " if ok else "  FAIL ") + n.ljust(width) + ("  " + d if d and not ok else ""))

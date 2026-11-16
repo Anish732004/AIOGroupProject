@@ -20,8 +20,8 @@
   function flagBadges(s, all) {
     const out = [];
     if (s.active_shortage) out.push(PS.badge('crit', 'In shortage', 'alert', 'The FDA lists an active carboplatin shortage record for this company.'));
-    if (s.country_neutral) out.push(PS.badge('', 'Country: no data', 'nodata', 'The drug label does not say where it is made. Country-based marks use the middle value of the other suppliers.'));
-    if (s.factory_neutral) out.push(PS.badge('', 'Factory: no data', 'nodata', 'The factory is not named on the label, so inspection and warning-letter terms use the middle value of the other suppliers.'));
+    if (s.country_neutral) out.push(PS.badge('', 'Country: no data', 'nodata', 'The drug label does not say where it is made. Country-based marks use the middle value of the other suppliers.' + (PS.isSyn() ? ' The synthetic view does not invent this: it is a fact about one company, not an industry average.' : '')));
+    if (s.factory_neutral) out.push(PS.badge('', 'Factory: no data', 'nodata', 'The factory is not named on the label, so inspection and warning-letter terms use the middle value of the other suppliers.' + (PS.isSyn() ? ' The synthetic view does not invent this: it is a fact about one company, not an industry average.' : '')));
     if (all && s.is_probation) out.push(PS.badge('', 'New supplier', 'new', 'Fewer than 5 past deliveries of its own on record. The plan gives a new supplier a capped trial share.'));
     if (synEstablished(s)) out.push(PS.badge('syn', 'Established (synthetic)', 'syn', s.syn.past_deliveries + ' past deliveries to this buyer, ' + PS.pct(100 * s.syn.on_time_rate) + ' on time: synthetic values (ranges R10, R11).'));
     return out.length ? '<span class="flags">' + out.join('') + '</span>' : '';
@@ -29,7 +29,7 @@
 
   V.synBanner = function () {
     return '<div style="margin-bottom:18px">' + PS.banner('syn', 'syn', '<strong>Synthetic view.</strong> Inputs with no public evidence are filled with values invented within industry ranges, each marked ' +
-      PS.synTag(null) + ': freight, delivery terms, past deliveries to this buyer, invoices, contracts, factory capacity and route share. FDA records, prices and country logistics scores stay real. ' +
+      PS.synTag(null) + ': freight, delivery terms, past deliveries to this buyer, invoices, contracts, factory capacity and route share. FDA records, prices and country logistics scores stay real, and facts about a specific company are never invented, so "no data" stays where a drug label is silent (Fresenius\'s country, Avyxa\'s and Fresenius\'s factory). ' +
       '<a href="#/trust">See every value and its basis</a>. Choose <strong>Real data only</strong> in the side bar for the evidence-only result.') + '</div>';
   };
   function synEstablished(s) { return PS.isSyn() && s.syn && s.syn.established; }
@@ -66,7 +66,7 @@
     const act = PS.activeShortages(), comp = {};
     act.forEach(function (r) { comp[r.company_name] = 1; });
     const counts = {};
-    c.evidence_ledger.forEach(function (r) { counts[r.level] = (counts[r.level] || 0) + 1; });
+    PS.ledger().forEach(function (r) { counts[r.level] = (counts[r.level] || 0) + 1; });
     const x = d.models.c2.xgboost_test;
     return '<div class="hero">' +
       '<div class="hero-text"><span class="eyebrow">' + e(c.project.product) + ' · ' + e(c.project.product_note) + '</span>' +
@@ -106,12 +106,13 @@
         return '<div class="card crit-card"><span class="code">' + e(k.code) + '</span><h3>' + e(k.short) + '</h3><p>' + e(k.plain) + '</p><p class="how">' + e(PS.isSyn() && k.method_synthetic ? k.method_synthetic : k.method) + '</p></div>';
       }).join('') + '</div></section>' +
 
-      '<section class="section"><h2>Why you can trust the numbers</h2><p class="sub">One rule: every input is backed by a cited source, or it is openly marked "no data" and given the same neutral value for every supplier.</p>' +
-      '<div class="grid g4">' + ['real', 'standin', 'nodata', 'judgement'].map(function (k) {
+      '<section class="section"><h2>Why you can trust the numbers</h2><p class="sub">' + (PS.isSyn()
+        ? 'Synthetic view: inputs with no public evidence are filled from approved industry ranges and marked synthetic; every other input is the same as in the real view.'
+        : 'One rule: every input is backed by a cited source, or it is openly marked "no data" and given the same neutral value for every supplier.') + '</p>' +
+      '<div class="grid g4">' + PS.levels().filter(function (k) { return !PS.isSyn() || counts[k]; }).map(function (k) {
         const lv = c.evidence_levels[k];
         return tile(lv.label, counts[k] || 0, e(lv.plain));
-      }).join('') + '</div>' + (PS.hasSyn() ? '<p class="ink2" style="margin-top:12px">' + (PS.isSyn() ? 'You are in the synthetic view: the "no data" inputs above are filled with labelled synthetic values.' :
-        'A synthetic view, which fills the "no data" inputs with values invented within industry ranges, can be switched on in the side bar.') + '</p>' : '') +
+      }).join('') + '</div>' + (PS.hasSyn() && !PS.isSyn() ? '<p class="ink2" style="margin-top:12px">A synthetic view, which fills the "no data" inputs with values invented within industry ranges, can be switched on in the side bar.</p>' : '') +
       '<p style="margin-top:14px"><a class="btn" href="#/trust">See the evidence behind every input</a></p></section>';
   };
 
@@ -126,7 +127,7 @@
     rows.forEach(function (r) { if (r.factory.country !== 'Unknown') countries[r.factory.country] = 1; });
     const unknownC = rows.some(function (r) { return r.factory.country === 'Unknown'; });
     out.push({ title: 'The order is spread over ' + rows.length + ' independent factories in ' + Object.keys(countries).length + ' countries' + (unknownC ? ', plus one whose country is not stated' : ''),
-      text: rows.map(function (r) { return r.factory.label + ' (' + r.factory.country + ') ' + PS.pct(100 * r.vials / d.meta.demand); }).join(', ') +
+      text: rows.map(function (r) { return r.factory.label + ' (' + (r.factory.country === 'Unknown' ? 'country not stated' : r.factory.country) + ') ' + PS.pct(100 * r.vials / d.meta.demand); }).join(', ') +
         '. The largest share is ' + PS.pct(100 * rows[0].vials / d.meta.demand) +
         (d.modes.Normal.established_factories === 0 ? ': with no supplier holding a delivery record of its own, the plan caps every factory at ' + PS.pct(100 * d.modes.Normal.probation_cap) + '.' : '.'),
       link: '#/split', cta: 'See the order split' });
@@ -186,7 +187,7 @@
       out.push({ title: 'A disaster shutting every factory in ' + ctry.country + ' would ' + (hit.spot > 0.5 ? 'leave a supply gap' : hit.spend > sc.spend * 1.05 ? 'not stop supply, but cost far more' : 'be absorbed by the other factories'),
         text: ctry.groups.length + ' of the ' + d.meta.factories + ' factories are in ' + ctry.country + '. Without them ' +
           (hit.spot > 0.5 ? PS.num(hit.spot) + ' vials need an emergency purchase and ' : 'the order is still covered, but ') +
-          'the monthly cost ' + (hit.spend > sc.spend * 1.05 ? 'rises from ' + money(sc.spend) + ' to ' + money(hit.spend) : 'stays close to ' + money(sc.spend) + ' (' + money(hit.spend) + ')') + ' ' + PS.priceBasis() + '.' +
+          'the monthly cost ' + (hit.spend > sc.spend * 1.05 ? 'rises from ' + money(sc.spend) + ' to ' + money(hit.spend) : 'barely changes (' + money(sc.spend) + ' to ' + money(hit.spend) + ')') + ', ' + PS.priceBasis() + '.' +
           (wr ? ' If the supplier whose factory country is unknown is also there, ' + (wr.spot > 0.5 ? PS.num(wr.spot) + ' vials need an emergency purchase.' : 'the order is still covered.') : '') +
           (singleOk ? ' Losing any single factory, by contrast, is fully absorbed.' : ''),
         link: '#/split?outage=' + encodeURIComponent(ctry.key), cta: 'Run the stress test' });
@@ -268,7 +269,7 @@
       (PS.isSyn() ? row('Past deliveries to this buyer', 'synthetic', A.syn.past_deliveries, B.syn.past_deliveries, function (v) { return n(v) + PS.synTag('R10'); }) +
         row('Monthly vials its factory can give us', 'synthetic', A.syn.factory_capacity_vials, B.syn.factory_capacity_vials, function (v) { return n(v) + PS.synTag('R8'); }) : '') +
       row('Active FDA shortage', '', A.active_shortage, B.active_shortage, function (v) { return v ? PS.badge('crit', 'Yes', 'alert') : 'No'; }) +
-      row('Share of 2025 US Medicaid volume', 'information only, not scored', A.medicaid_share_pct, B.medicaid_share_pct, function (v) { return v === null || v === undefined ? 'Not in the data' : PS.num(v, 1) + '%'; }) +
+      row('Share of 2025 US Medicaid volume', PS.isSyn() ? 'real data; picks the established suppliers and scales capacity in the synthetic view' : 'information only, not scored', A.medicaid_share_pct, B.medicaid_share_pct, function (v) { return v === null || v === undefined ? 'Not in the data' : PS.num(v, 1) + '%'; }) +
       '</tbody></table></div>' +
       '<p class="section"><a class="btn" href="#/suppliers?supplier=' + encodeURIComponent(A.id) + '">Details for ' + e(A.name) + '</a> <a class="btn" href="#/suppliers?supplier=' + encodeURIComponent(B.id) + '">Details for ' + e(B.name) + '</a></p>';
   };
@@ -305,7 +306,7 @@
         '<td class="col-supplier"><strong>' + e(sp.name) + '</strong><span class="cellsub">' + e((sp.factory && sp.factory.indexOf('(') !== 0 ? 'Made by ' + sp.factory : 'Factory not named on the label') +
           ' · ' + (sp.country === 'Unknown' ? 'country not stated' : sp.country)) + '</span>' + delta + rowFlags(sp) + '</td>' +
         '<td>' + PS.meter(sc.S[i], 1, { d: 3, tip: sp.name + ': overall score ' + sc.S[i].toFixed(3) + ' (1 = the ideal supplier).' }) + '</td>' +
-        crit.map(function (c, j) { return '<td>' + (PS.noData(c.id) ? PS.meter(0, 1, { label: 'no data', tip: c.short + ': ' + PS.NO_DATA_TIP }) : PS.meter(vals[i][j], 1, { tip: sp.name + ' · ' + c.short + ': ' + vals[i][j].toFixed(3) + ' (0 best, 1 worst).' })) + '</td>'; }).join('') +
+        crit.map(function (c, j) { return '<td>' + (PS.noData(c.id) ? PS.meter(0, 1, { label: 'no data', tip: c.short + ': ' + PS.NO_DATA_TIP }) : PS.meter(vals[i][j], 1, { tip: sp.name + ' · ' + c.short + ': ' + vals[i][j].toFixed(3) + ' (0 best, 1 worst).' + (PS.isSyn() && c.id === 'C3_price_integrity' && sp.is_probation ? ' New supplier: no invoices with this buyer yet, so the plan gives 0.' : '') })) + '</td>'; }).join('') +
         '</tr>';
     }).join('');
     return head('Suppliers', 'Who can supply it, and how each one scores',
@@ -633,15 +634,16 @@
   }
 
   V.trust = function () {
-    const d = PS.data, c = d.content, lv = c.evidence_levels, icon = { real: 'good', standin: 'warn', nodata: 'nodata', judgement: 'gear' };
+    const d = PS.data, c = d.content, lv = c.evidence_levels, icon = PS.LEVEL_ICON, ledger = PS.ledger();
     return head('Evidence & trust', 'What every number rests on',
-      'One rule runs through the whole system: an input is either backed by a cited source, or openly marked "no data" and given the same neutral value for every supplier, so it cannot tilt the ranking.') +
-      '<div class="grid g4">' + Object.keys(lv).map(function (k) {
-        const n = c.evidence_ledger.filter(function (r) { return r.level === k; }).length;
+      PS.isSyn() ? 'Synthetic view: every input with no public evidence is filled with a value invented within an approved industry range and marked synthetic; the ranges and their sources are listed below. Everything else is the same as in the real view.'
+        : 'One rule runs through the whole system: an input is either backed by a cited source, or openly marked "no data" and given the same neutral value for every supplier, so it cannot tilt the ranking.') +
+      '<div class="grid g4">' + PS.levels().filter(function (k) { return !PS.isSyn() || ledger.some(function (r) { return r.level === k; }); }).map(function (k) {
+        const n = ledger.filter(function (r) { return r.level === k; }).length;
         return '<div class="card tile"><span>' + PS.badge('level-' + k, lv[k].label, icon[k]) + '</span><span class="value">' + n + '</span><span class="hint">' + e(lv[k].plain) + '</span></div>';
       }).join('') + '</div>' +
-      '<section class="section"><h2>Every input, and its evidence</h2>' + (PS.isSyn() ? '<p class="sub">This table describes the real view. In the synthetic view, the "no data" rows are filled from the ranges in the next table.</p>' : '') + '<div class="table-wrap"><table><thead><tr><th>Input</th><th>Feeds</th><th>Evidence</th><th>Source</th><th>What it means here</th></tr></thead><tbody>' +
-      c.evidence_ledger.map(function (r) {
+      '<section class="section"><h2>Every input, and its evidence</h2>' + (PS.isSyn() ? '<p class="sub">Rows marked Synthetic are filled from the ranges in the next table; in the real view the same rows read "no data" or "stand-in".</p>' : '') + '<div class="table-wrap"><table><thead><tr><th>Input</th><th>Feeds</th><th>Evidence</th><th>Source</th><th>What it means here</th></tr></thead><tbody>' +
+      ledger.map(function (r) {
         return '<tr><td><strong>' + e(r.input) + '</strong></td><td>' + e(r.feeds) + '</td><td>' + PS.badge('level-' + r.level, lv[r.level].label, icon[r.level]) + '</td><td>' + e(r.source) + '</td><td class="ink2">' + e(r.note) + '</td></tr>';
       }).join('') + '</tbody></table></div></section>' +
       (PS.hasSyn() ? synSection() : '') +

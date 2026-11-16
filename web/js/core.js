@@ -53,6 +53,14 @@ window.PS = (function () {
     return '<span class="syn-tag" data-tip="Synthetic value' + (rid ? ' (range ' + PS.esc(rid) + ')' : '') +
       ': invented within an industry range because no public data exists. See Evidence and trust." tabindex="0">' + PS.icon('syn') + PS.esc(text || 'synthetic') + '</span>';
   };
+  /* the evidence ledger as it applies to the view shown: synthetic rows replace the gaps they fill */
+  PS.ledger = function () {
+    return PS.data.content.evidence_ledger.map(function (r) {
+      return PS.isSyn() && r.synthetic ? Object.assign({}, r, r.synthetic, { real_level: r.level }) : r;
+    });
+  };
+  PS.levels = function () { return PS.isSyn() ? ['real', 'standin', 'nodata', 'judgement', 'synthetic'] : ['real', 'standin', 'nodata', 'judgement']; };
+  PS.LEVEL_ICON = { real: 'good', standin: 'warn', nodata: 'nodata', judgement: 'gear', synthetic: 'syn' };
   PS.priceBasis = function () { return PS.isSyn() ? 'at official US prices plus synthetic freight' : 'at official US prices'; };
 
   /* ---- marks ---- */

@@ -34,7 +34,7 @@ late more often than EXW ones (13% vs 5%), so that assumption alone moves the la
 |---|---|
 | **Freight** | The cost of transporting the goods. |
 | **Insurance** | The cost of insuring the goods during transport. |
-| **Landed cost** | The total cost to get one vial to you: price + freight + insurance. C1 is based on it (freight to the UAE has no data, so it is left out). |
+| **Landed cost** | The total cost to get one vial to you: price + freight + insurance. C1 is based on it. In the real view freight to the UAE has no data, so it is left out; the synthetic view adds synthetic air freight (ranges R3, R5). |
 | **Freight-to-value ratio** | Freight cost divided by goods value. A $4,000 freight bill on $5 of goods is suspicious. |
 | **Shipment mode** | Air, sea (ocean) or truck. |
 | **Air charter** | A whole aircraft hired for one shipment. |
@@ -264,7 +264,7 @@ late more often than EXW ones (13% vs 5%), so that assumption alone moves the la
 | **Lambda (λ)** | A dial that sets how much the split cares about risk compared with cost. |
 | **Binary variable** | A yes-or-no choice inside the maths, such as "is this supplier used at all?" |
 | **Concentration cap** | The maximum share one supplier may get. |
-| **70/20/10** | The plan's example split: main supplier, backup, trial supplier. It needs a supplier with its own delivery record; while all suppliers are new, the plan's rules cap each factory at 30%. |
+| **70/20/10** | The plan's example split: main supplier, backup, trial supplier. It needs a supplier with its own delivery record. In the real view all suppliers are new, so the plan's rules cap each factory at 30% (split 30/30/30/10); in the synthetic view 5 suppliers are established and the split is 37/33/15/15. |
 | **Normal / Crisis / Cost Focus mode** | Three preset weight settings. Crisis shifts weight from cost to route risk. |
 | **Stress factor** | In Crisis mode, route risk is multiplied by 1.5. |
 | **Stress test / scenario** | Asking "what if this bad thing happens?" and re-running the numbers. Here: a natural disaster takes factories offline and the order split re-solves. |

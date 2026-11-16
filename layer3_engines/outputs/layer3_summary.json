@@ -1,6 +1,6 @@
 {
   "as_of": "2026-11-15",
-  "runtime_s": 4.4,
+  "runtime_s": 4.3,
   "matrix": "data/processed/suppliers_matrix.csv",
   "c2_xgboost_test": {
     "roc_auc": 0.7975,
