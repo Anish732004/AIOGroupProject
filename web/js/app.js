@@ -21,6 +21,14 @@
         (r[0] === 'alerts' && alerts ? '<span class="alert-dot" title="Active shortage records"></span>' : '') + '</a>';
     }).join('');
   }
+  function renderViewToggle() {
+    const box = document.getElementById('view-toggle');
+    if (!PS.hasSyn()) { box.innerHTML = ''; return; }
+    box.innerHTML = '<span class="small muted" id="view-lab">Data shown</span><div class="seg" role="group" aria-labelledby="view-lab">' +
+      [['real', 'Real data only'], ['synthetic', 'With synthetic data']].map(function (v) {
+        return '<button type="button" data-view="' + v[0] + '" aria-pressed="' + (PS.state.view === v[0]) + '">' + v[1] + '</button>';
+      }).join('') + '</div>';
+  }
   function renderControls(force) {
     const need = WITH_CONTROLS[route()[2]];
     if (!need) { controls.innerHTML = ''; return; }
@@ -38,13 +46,14 @@
   };
   function renderView() {
     const r = route();
-    view.innerHTML = r[2] === 'documents' ? PS.views.documents(lettersAll) : PS.views[r[2]]();
+    view.innerHTML = (PS.isSyn() ? PS.views.synBanner() : '') + (r[2] === 'documents' ? PS.views.documents(lettersAll) : PS.views[r[2]]());
     document.title = r[1] + ' · PharmaShield GCC';
     if (r[2] === 'split') refreshAudit();
   }
   /* links can carry a situation, e.g. #/split?mode=Crisis&dial=1.5&data=0.2 (handy for a presentation) */
   function applyLinkSettings() {
     const q = new URLSearchParams((location.hash.split('?')[1] || '')), m = PS.data.meta, s = PS.state;
+    if (q.get('view') === 'synthetic' || q.get('view') === 'real') PS.setView(q.get('view'));
     const mode = q.get('mode'), dial = parseFloat(q.get('dial')), data = parseFloat(q.get('data'));
     if (mode && m.modes.indexOf(mode) >= 0) s.mode = mode;
     if (m.lambdas.indexOf(dial) >= 0) s.lam = dial;
@@ -56,7 +65,7 @@
   }
   function render(navigated) {
     if (navigated) applyLinkSettings();
-    renderNav(); renderControls(navigated); renderView();
+    renderNav(); renderViewToggle(); renderControls(navigated); renderView();
     if (navigated) { window.scrollTo(0, 0); }
   }
 
@@ -82,7 +91,7 @@
     d.suppliers.forEach(function (sp, i) { if (sc.vials[i] > 0.5) split[sp.name] = sc.vials[i]; });
     PS.criteria().forEach(function (c, j) { weights[c.short] = sc.w[j]; });
     try {
-      await PSAudit.append({ approver: who, decision: decision, reason: reason, mode: s.mode, risk_dial: s.lam, entropy_share: s.ent,
+      await PSAudit.append({ approver: who, decision: decision, reason: reason, data_view: s.view, mode: s.mode, risk_dial: s.lam, entropy_share: s.ent,
         demand_vials: d.meta.demand, split_vials: split,
         stress_test: s.outage && s.outage !== 'none' ? PS.outageLabel(PS.outage(s.outage)) + ' offline' : 'none', emergency_purchase_vials: sc.spot, weights: weights,
         snapshot_as_of: d.meta.as_of, score_table_sha256: d.meta.matrix_sha256 });
@@ -117,6 +126,8 @@
   /* ---------- events ---------- */
   document.addEventListener('click', function (ev) {
     const t = ev.target;
+    const dv = t.closest('[data-view]');
+    if (dv) { PS.setView(dv.getAttribute('data-view')); renderViewToggle(); renderControls(true); renderView(); return; }
     const mode = t.closest('[data-mode]');
     if (mode) { PS.state.mode = mode.getAttribute('data-mode'); renderControls(false); renderView(); return; }
     const row = t.closest('tr[data-supplier]');

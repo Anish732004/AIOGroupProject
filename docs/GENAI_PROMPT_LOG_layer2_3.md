@@ -15,9 +15,9 @@ below is GenAI-generated and should carry the red dashed outline on slides. Prom
 | 7 | "were there any assumptions made without asking me in the layer 2 and layer 3?" / "ok" | `docs/DECISIONS.md` |
 | 8 | "we have to solve this, whatever assumptions we make that they have to backed by evidence and data" / "yes, approved. apply it one by one." | Evidence rule: DailyMed label evidence (`reference/sku_manufacturing_sites.csv`), FDA establishment registry factory numbers, factory-only scoring with warning notes, Medicaid information file, neutral "no data" values, recall bug fix, contracts removed from the score |
 | 9 | "A with the warning note." / "but what ever we are doing now, it wont affect our whole mvp's pipeline in the negative way rigth? if yes, then continue with A." / "all as recommended" | Items 2–11 applied; recall re-decision; tests updated |
-| 11 | "also, the frontend is not streamlit, i would like to make it in vercel. the mvp should be showcased in the best possible manner, easily navigatable, visually good, insightful and easily understandable to the end reader" (+ two answers: approvals in the browser; keep Streamlit locally) | `web/` (8-page static site), `vercel.json`, `.vercelignore`, `tools/export_web_snapshot.py`, `tools/test_web.mjs`, `tools/serve_web.mjs`, `tools/e2e_web.mjs`; Layer 4 tie-break fix |
-| 10 | Layer 4/5 questions answered in the chat (lambda slider, 5% minimum only if chosen, caps per factory, cockpit layout, board weights with entropy slider at 0%) | `layer4_decision/` (weights, TOPSIS, PuLP order split, tests, notebook 03), `streamlit_app.py` cockpit, `app/pipeline_console.py`, `app/audit.py` (hash-chained audit log) |
-| 12 | "add only the natural disaster thing. do stress test. and check thoroughly and make sure the frontend, backend and the plan don't contradict each other in any way.." | Layer 4 `offline_factories` + robust tie-break; stress test on the website; `tools/check_consistency.py`; plan-differences table on the Evidence & trust page; stale docs corrected |
+
+Layer 4, Layer 5 (cockpit and website), the stress test and the synthetic view continue in
+[GENAI_PROMPT_LOG_layer4_5.md](GENAI_PROMPT_LOG_layer4_5.md).
 
 ## What is and is not AI-generated data
 

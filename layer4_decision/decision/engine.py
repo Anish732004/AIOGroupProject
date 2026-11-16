@@ -20,6 +20,7 @@ from .weights import CRITERIA, ahp_from_pairwise, blend, entropy_weights, implie
 
 ROOT = Path(__file__).resolve().parents[2]
 MATRIX = ROOT / "data" / "processed" / "suppliers_matrix.csv"
+MATRIX_SYNTHETIC = ROOT / "data" / "processed" / "suppliers_matrix_synthetic.csv"   # synthetic view (decision S4)
 TIERS = ROOT / "layer1_ingestion" / "reference" / "criticality_tiers.csv"
 SKU = ROOT / "layer1_ingestion" / "reference" / "sku_master.csv"
 DEFAULT_LAMBDA = 1.0
@@ -32,6 +33,23 @@ def load_inputs(matrix_path: Path = MATRIX) -> tuple[pd.DataFrame, pd.DataFrame,
     if missing:
         raise ValueError(f"{missing} are empty - run Layer 3 (layer3_engines/run_engines.py) after Layer 1")
     return m, pd.read_csv(TIERS), pd.read_csv(SKU)
+
+
+def stress_outages(m: pd.DataFrame) -> list[dict]:
+    """Natural-disaster stress test (decision S1): every factory on its own, every factory in India (the country with
+    most factories), and the worst case where factories whose country is unknown are also there. One definition,
+    used by the website export and the Streamlit cockpit."""
+    e = m[m["eligible_for_ranking"].astype(bool)]
+    fac = e.groupby("source_plant_group")["manufacturing_country"].first()
+    india = sorted(fac[fac == "India"].index)
+    unknown = sorted(fac[fac == "Unknown"].index)
+    out = [{"key": g, "groups": [g], "kind": "factory"} for g in sorted(fac.index)]
+    if india:
+        out.append({"key": "COUNTRY_INDIA", "groups": india, "kind": "country", "country": "India"})
+        if unknown:
+            out.append({"key": "COUNTRY_INDIA_PLUS_UNKNOWN", "groups": india + unknown, "kind": "country_worst",
+                        "country": "India"})
+    return out
 
 
 def decision_matrix(m: pd.DataFrame, mode: str) -> pd.DataFrame:

@@ -8,6 +8,7 @@
   --neg: #e34948; --context: #898781;
   --good: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b;
   --crit-wash: #fdeeee; --warn-wash: #fef6e0; --good-wash: #e9f7e9; --neutral-wash: #f1f0ec;
+  --syn: #7a4fc8; --syn-ink: #5b33a3; --syn-wash: #f1ebfb;
   --radius: 12px; --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -18,6 +19,7 @@
     --accent: #3987e5; --accent-ink: #86b6ef; --track: #0d366b; --accent-wash: #14263d;
     --neg: #e66767; --context: #898781;
     --crit-wash: #331a1a; --warn-wash: #33290d; --good-wash: #12290f; --neutral-wash: #242422;
+    --syn: #a888e8; --syn-ink: #c4adf2; --syn-wash: #261d38;
   }
 }
 :root[data-theme="dark"] {
@@ -27,6 +29,7 @@
   --accent: #3987e5; --accent-ink: #86b6ef; --track: #0d366b; --accent-wash: #14263d;
   --neg: #e66767; --context: #898781;
   --crit-wash: #331a1a; --warn-wash: #33290d; --good-wash: #12290f; --neutral-wash: #242422;
+  --syn: #a888e8; --syn-ink: #c4adf2; --syn-wash: #261d38;
 }
 
 * { box-sizing: border-box; }
@@ -229,3 +232,14 @@ code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-
 .gloss-list { columns: 2 320px; column-gap: 28px; } .gloss-item { break-inside: avoid; padding: 8px 0; border-bottom: 1px solid var(--grid); }
 .gloss-item dt { font-weight: 650; } .gloss-item dd { margin: 2px 0 0; color: var(--ink-2); font-size: 14px; }
 @media print { .side, .controls, .foot { display: none; } .shell { display: block; } }
+
+/* synthetic view (decision S4): every invented value wears this marker, never colour alone */
+.badge.syn, .badge.level-synthetic { background: var(--syn-wash); }
+.syn-tag { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  background: var(--syn-wash); color: var(--syn-ink); font-size: 11.5px; font-weight: 600; white-space: nowrap; vertical-align: 1px; }
+.syn-tag .ic { width: 11px; height: 11px; }
+.banner.syn { background: var(--syn-wash); border-left-color: var(--syn); }
+.view-toggle { display: flex; flex-direction: column; gap: 6px; }
+.view-toggle .seg { display: flex; }
+.view-toggle .seg button { flex: 1; padding: 6px 8px; font-size: 12.5px; }
+.view-toggle .seg button[data-view="synthetic"][aria-pressed="true"] { color: var(--syn-ink); }

@@ -124,6 +124,7 @@ late more often than EXW ones (13% vs 5%), so that assumption alone moves the la
 | **Exclusivity** | A contract rule that stops the buyer using a second supplier. |
 | **Dual sourcing** | Splitting orders across two or more suppliers, so one failure does not stop supply. |
 | **Warm backup** | A second supplier that is already approved and receiving small orders, so it can scale up quickly. |
+| **Warm-backup share** | The part of this month's order placed with factories other than the main one (plan Q7 KPI). Today: 70% in the real view, 63% in the synthetic view. |
 | **Safety stock / consignment stock** | Extra inventory kept as a cushion, sometimes owned by the supplier but stored near the buyer. |
 | **Strategic stockpile** | A national emergency reserve of medicines. |
 | **Pro-rata allocation** | In a shortage, each customer gets a share in proportion to its past orders. |
@@ -149,6 +150,9 @@ late more often than EXW ones (13% vs 5%), so that assumption alone moves the la
 | **Proxy** | A stand-in used when the real data is secret or missing. |
 | **Scenario assumption** | A number the team chose because no real one exists. It must be labelled as such. |
 | **Synthetic** | Made up for testing. Our 11 supplier contracts are synthetic. |
+| **Synthetic view** | A second version of the results, switched on in the website's side bar, where every input with no public evidence is filled with a value invented within an industry range. Each such value is marked "synthetic". The real view never uses them. |
+| **Approved range** | The lowest and highest value a synthetic number may take, with the industry report or real data it is based on (file `synthetic/reference/synthetic_ranges.csv`). |
+| **Established supplier** | A supplier with at least 5 past deliveries of its own. The plan lets its factory take up to 70% of the order; a new supplier is capped at a trial share. |
 | **Panel** | The list of manufacturers we score (18 in total, 11 rankable). |
 | **Suppliers matrix** | The final table: one row per manufacturer, with all five marks. |
 

@@ -2,7 +2,7 @@
 Sources 2-5 - openFDA live feeds (scoring layer).
 
   * NDC Directory      -> hard qualification gate per SKU (UAE registration proxy)
-  * Drug Shortages     -> live alert feed + active-shortage penalty (C4 / dashboard tab 2)
+  * Drug Shortages     -> live alert feed + active_fda_shortage badge (not scored: plan 4.3 C4 has no shortage term)
   * Drug Enforcement   -> Class I/II/III recalls, last 5 years (C4)
   * Drug Label (SPL)   -> "Manufactured by: ... India" text -> plant country per labeler
                           (feeds manufacturing_country, C2 inference and C5 route exposure)

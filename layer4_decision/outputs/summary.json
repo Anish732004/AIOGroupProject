@@ -1,4 +1,5 @@
 {
+  "data_view": "real",
   "lambda": 1.0,
   "entropy_share": 0.0,
   "modes": {
@@ -48,7 +49,12 @@
       "factories_used": 4,
       "makers_used": 4,
       "largest_factory_share_pct": 30.0,
-      "objective_value": 1052121.81
+      "warm_backup_share_pct": 70.0,
+      "meets_two_supplier_minimum": true,
+      "objective_value": 1052121.81,
+      "offline_factories": [],
+      "tie_break": "applied",
+      "monthly_spend_usd": 279546.0
     },
     "Crisis": {
       "weights_used": {
@@ -82,7 +88,7 @@
         "TEYRO LABS": 0.0,
         "EUGIA US": 0.0,
         "FRESENIUS KABI USA": 0.0,
-        "ACCORD HEALTHCARE": -0.0
+        "ACCORD HEALTHCARE": 0.0
       },
       "solver_status": "Optimal",
       "solver": "HiGHS",
@@ -96,7 +102,12 @@
       "factories_used": 4,
       "makers_used": 4,
       "largest_factory_share_pct": 30.0,
-      "objective_value": 1156636.3
+      "warm_backup_share_pct": 70.0,
+      "meets_two_supplier_minimum": true,
+      "objective_value": 1156636.3,
+      "offline_factories": [],
+      "tie_break": "applied",
+      "monthly_spend_usd": 279546.0
     },
     "Cost Focus": {
       "weights_used": {
@@ -144,7 +155,12 @@
       "factories_used": 4,
       "makers_used": 4,
       "largest_factory_share_pct": 30.0,
-      "objective_value": 893295.97
+      "warm_backup_share_pct": 70.0,
+      "meets_two_supplier_minimum": true,
+      "objective_value": 893295.97,
+      "offline_factories": [],
+      "tie_break": "applied",
+      "monthly_spend_usd": 279546.0
     }
   },
   "ahp_consistency": {

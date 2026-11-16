@@ -89,6 +89,14 @@ Probation suppliers = 0.0 (plan §4.3).
   contract's SHA-256; a changed or new contract falls back to the rule extractor. A contract counts only for the company
   that signed it (Apotex does not inherit Teyro's agreement).
 
+## Synthetic view (decision S4)
+
+`synthetic/build_synthetic.py` reuses these engines on a copy of the score table. When a panel row carries
+`inputs_fixed=True`, C2 predicts on that row's synthetic shipping profile instead of averaging over real shipments
+(SHAP reasons are tagged "(synthetic)"). The model is trained on the same real data, so its test score is unchanged.
+C3 runs `score_lines` on synthetic invoice lines. The real run of `run_engines.py` never sets `inputs_fixed`, so its
+output is byte-for-byte unchanged. See [synthetic/README.md](../synthetic/README.md).
+
 ## Outputs (`layer3_engines/outputs/`, regenerated each run)
 
 `c2_metrics.json` · `c2_panel_predictions.csv` · `c2_feature_importance.csv` · `c2_test_predictions.csv` ·

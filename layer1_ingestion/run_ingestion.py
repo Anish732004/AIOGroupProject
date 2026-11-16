@@ -105,7 +105,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  quarantined rows: {sum(q_counts.values())} -> data/quarantine/")
     print("  report: data/quality/quality_report.md\n")
     if (P.processed / "suppliers_matrix.csv").exists():
-        print(f"  locked-schema hand-off: {P.processed / 'suppliers_matrix.csv'}\n")
+        print("  locked-schema hand-off: data/processed/suppliers_matrix.csv (repository root)\n")   # relative: no local paths in shared output
     failed = any(st["status"] == "FAILED" for st in QLOG.source_status.values())
     return 1 if a.strict and (failed or errors) else 0
 

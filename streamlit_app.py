@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import sys
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 import pandas as pd
@@ -29,7 +30,9 @@ from decision import engine as L4  # noqa: E402
 from decision.weights import CRITERIA, MODES  # noqa: E402
 from engines import c4_compliance  # noqa: E402
 
-MATRIX = ROOT / "data" / "processed" / "suppliers_matrix.csv"
+MATRIX_REAL = ROOT / "data" / "processed" / "suppliers_matrix.csv"
+MATRIX_SYNTHETIC = ROOT / "data" / "processed" / "suppliers_matrix_synthetic.csv"   # synthetic view (decision S4)
+SYN_INPUTS = ROOT / "synthetic" / "outputs" / "synthetic_inputs.csv"
 INTERIM = ROOT / "layer1_ingestion" / "data" / "interim"
 L1_REF = ROOT / "layer1_ingestion" / "reference"
 L3_OUT = ROOT / "layer3_engines" / "outputs"
@@ -42,6 +45,11 @@ LABEL = {"C1_landed_cost": "C1 Cost", "C2_delivery_risk": "C2 Late delivery", "C
 # --------------------------------------------------------------------------- #
 # data
 # --------------------------------------------------------------------------- #
+def usd(v: float) -> str:
+    """Whole dollars, halves rounded up - the same rounding as the website and the docs."""
+    return f"${int(Decimal(str(v)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)):,}"
+
+
 def mtime(p: Path) -> float:
     return p.stat().st_mtime if p.exists() else 0.0
 
@@ -60,9 +68,9 @@ def jload(p: Path) -> dict:
 
 
 @st.cache_data(show_spinner="Ranking suppliers and solving the order split…")
-def decide(mode: str, lam: float, ent: float, _mtime: float) -> dict:
-    m, tiers, sku = L4.load_inputs(MATRIX)
-    return L4.run(m, tiers, sku, mode, lam, ent)
+def decide(matrix: str, mode: str, lam: float, ent: float, offline: tuple, _mtime: float) -> dict:
+    m, tiers, sku = L4.load_inputs(Path(matrix))
+    return L4.run(m, tiers, sku, mode, lam, ent, set(offline) or None)
 
 
 def matrix_ready() -> tuple[bool, str]:
@@ -80,6 +88,13 @@ def matrix_ready() -> tuple[bool, str]:
 # --------------------------------------------------------------------------- #
 with st.sidebar:
     st.header("Decision controls")
+    synthetic = False
+    if MATRIX_SYNTHETIC.exists():
+        synthetic = st.radio("Data shown", ["Real data only", "With synthetic data"], index=0,
+                             help="Synthetic view (decision S4): inputs with no public evidence are filled from approved "
+                                  "industry ranges (synthetic/reference/synthetic_ranges.csv). The real view never uses "
+                                  "them.") == "With synthetic data"
+    MATRIX = MATRIX_SYNTHETIC if synthetic else MATRIX_REAL
     mode = st.radio("Mode (one click, plan §4.2)", MODES, index=0,
                     help="Crisis: weight moves from cost to route exposure, and Hormuz exposure x1.5 (capped at 1). "
                          "Cost Focus: weight moves from route exposure to cost.")
@@ -95,7 +110,7 @@ with st.sidebar:
         "- **Human-in-the-loop:** nothing is ordered until a category manager approves in tab 3.\n"
         "- **Explainable:** every delivery score shows its top 3 drivers (SHAP).\n"
         "- **Evidence rule:** every input is backed by a cited source, or marked *no data* and given a neutral "
-        "value ([docs/DECISIONS.md](https://github.com/adityachitale1-web/PharmaShield-GCC/blob/main/docs/DECISIONS.md)).\n"
+        "value (`docs/DECISIONS.md`). The optional synthetic view fills gaps from approved ranges, each marked.\n"
         "- **Fairness:** suppliers are scored on their own factory's record and their own history, never on "
         "country name alone or a parent company's record.\n"
         "- **UAE PDPL:** no personal data in the scores; the audit log stores approver initials only.\n"
@@ -108,9 +123,15 @@ with st.sidebar:
 st.title("PharmaShield GCC · Category Manager Cockpit")
 st.caption("Carboplatin Injection 10 mg/mL · Tier 1 (life-critical oncology) · UAE GPO · "
            "AI recommends, a human approves.")
+if synthetic:
+    st.info("◆ **Synthetic view.** Freight, delivery terms, past deliveries to this buyer, invoices, contracts, factory "
+            "capacity and route share are invented within approved industry ranges (ranges R1-R11 with sources in "
+            "`synthetic/reference/synthetic_ranges.csv`). FDA records, prices and World Bank scores stay real. "
+            "Switch to *Real data only* in the sidebar for the evidence-only result.")
 
 ready, why = matrix_ready()
-r = decide(mode, lam, ent, mtime(MATRIX)) if ready else None
+r = decide(str(MATRIX), mode, lam, ent, (), mtime(MATRIX)) if ready else None
+syn_in = csv(SYN_INPUTS).set_index("manufacturer_id") if synthetic and SYN_INPUTS.exists() else pd.DataFrame()
 m = csv(MATRIX).set_index("manufacturer_id") if ready else pd.DataFrame()
 
 # shortage banner (plan Q7)
@@ -124,13 +145,18 @@ if len(sh) and "is_active" in sh:
 if r is not None:
     d = r["diagnostics"]
     al = r["allocation"]
-    k1, k2, k3, k4, k5 = st.columns(5)
+    k1, k2, k3, k4, k5, k6 = st.columns(6)
     k1.metric("Mode", mode)
-    k2.metric("Factories in the split", d["factories_used"])
-    k3.metric("Largest single factory", f"{d['largest_factory_share_pct']:.0f}%")
-    k4.metric("Emergency spot buy", f"{d['spot_buy_vials']:,.0f} vials")
-    k5.metric("Countries in the split", al.loc[al["selected"], "factory_group"].map(
-        m["manufacturing_country"].groupby(m["source_plant_group"]).first()).nunique())
+    k2.metric("Factories in the split", d["factories_used"],
+              help="Plan 4.2: Tier 1 needs at least 2 suppliers. " + ("Met." if d["meets_two_supplier_minimum"] else "NOT met."))
+    k3.metric("Warm-backup share", f"{d['warm_backup_share_pct']:.0f}%",
+              help="Plan Q7: the part of the order placed with factories other than the main one. That supply is "
+                   "already approved and shipping, so it can be scaled up at once if the main factory fails.")
+    k4.metric("Largest single factory", f"{d['largest_factory_share_pct']:.0f}%")
+    k5.metric("Emergency spot buy", f"{d['spot_buy_vials']:,.0f} vials")
+    ctry = al.loc[al["selected"], "factory_group"].map(m["manufacturing_country"].groupby(m["source_plant_group"]).first())
+    k6.metric("Countries in the split", ctry[ctry != "Unknown"].nunique(),
+              help="Plus one factory whose country is not stated." if (ctry == "Unknown").any() else None)
 else:
     st.warning(f"{why} Open the **Data pipeline** tab and run the pipeline (Layer 1, then Layer 3) to fill the "
                "cockpit.")
@@ -161,6 +187,8 @@ with tab1:
                 f.append("⚪ factory: no data")
             if bool(m.loc[k, "active_fda_shortage"]):
                 f.append("🚨 in shortage")
+            if synthetic and k in syn_in.index and bool(syn_in.loc[k, "established"]):
+                f.append("◆ established (synthetic history)")
             flags.append(" · ".join(f))
         table = pd.DataFrame({
             "Rank": rk["rank"], "Supplier (name on box)": rk["labeler_name_fda"],
@@ -195,13 +223,28 @@ with tab1:
                 f"{int(row['vai_count_5yr'])} minor (VAI)\n"
                 f"- Injectable recalls by this seller, 5 yrs: **{int(row['recalls_class_i_ii_inj_5yr'])}**\n"
                 f"- Worst warning letter (in our 50-letter sample): {row.get('worst_letter') or 'none found'}\n"
-                f"- Contract: not scored (synthetic contracts)")
+                f"- Country logistics score (World Bank LPI): {row['lpi_score']:.1f} of 5; political stability (WGI, "
+                f"shown only): {row.get('wgi_political_stability', float('nan')):.2f}\n"
+                + (f"- Contract risk {row['contract_risk']:.2f}, counts 20% ◆ synthetic contract (R6)"
+                   if synthetic else "- Contract: not scored (synthetic contracts)"))
             note = row.get("sister_plant_warning")
             if isinstance(note, str) and note:
                 st.warning(f"Note (not scored): {note}")
             share = row.get("us_medicaid_2025_volume_share_pct")
             if pd.notna(share):
-                st.caption(f"Information only: {share:.1f}% of 2025 US Medicaid carboplatin volume.")
+                st.caption(("Real data, used to scale the synthetic capacity and pick the established suppliers: "
+                            if synthetic else "Information only: ") + f"{share:.1f}% of 2025 US Medicaid carboplatin volume.")
+            if synthetic and pick in syn_in.index:
+                y = syn_in.loc[pick]
+                st.markdown("**◆ Synthetic inputs for this supplier** (ranges on the website's Evidence & trust page)")
+                st.markdown(
+                    f"- Shipping: {y['shipment_mode']}, terms {y['vendor_inco_term']}, {int(y['shipment_vials']):,} vials "
+                    f"({y['shipment_weight_kg']:.0f} kg) per shipment (R1-R4)\n"
+                    f"- Air freight: ${y['freight_rate_usd_per_kg']:.2f}/kg = ${y['freight_usd_per_vial']:.2f} per vial (R5)\n"
+                    f"- Hormuz / Gulf-airspace share: {y['hormuz_air_share']:.2f} (R9) · factory capacity "
+                    f"{int(y['factory_capacity_vials']):,} vials/month (R8)\n"
+                    f"- Past deliveries to this buyer: {int(y['past_deliveries'])}"
+                    + (f", {100 * y['on_time_rate']:.0f}% on time (R10, R11)" if y["past_deliveries"] else " (new supplier)"))
         gaps = rk.loc[pick, [f"gap_share_{c[:2]}" for c in CRITERIA]]
         gaps.index = [LABEL[c] for c in CRITERIA]
         st.markdown("**Where this supplier loses ground against the ideal supplier**")
@@ -246,6 +289,29 @@ with tab3:
         st.info("No scores yet.")
     else:
         st.subheader(f"Recommended order split · {r['demand']:,} vials / month · {mode} mode · λ = {lam}")
+        mfull = csv(MATRIX)
+        outs = L4.stress_outages(mfull)
+        me = m[m["eligible_for_ranking"].astype(bool)]                     # rankable makers only (8 factories)
+        fac_country = me["manufacturing_country"].groupby(me["source_plant_group"]).first()
+        label = {o["key"]: (f"Every factory in {o['country']} ({len(o['groups'])} of {len(fac_country)})" if o["kind"] == "country"
+                            else f"{o['groups'][0]} ({fac_country.get(o['groups'][0], '?')})") for o in outs if o["kind"] != "country_worst"}
+        outage = st.selectbox("Stress test: a natural disaster takes factories offline (plan Q7)", ["none"] + list(label),
+                              format_func=lambda k: "Nothing (no disaster)" if k == "none" else label[k])
+        base = r
+        if outage != "none":
+            grp = next(o["groups"] for o in outs if o["key"] == outage)
+            r = decide(str(MATRIX), mode, lam, ent, tuple(grp), mtime(MATRIX))
+            dd, bd = r["diagnostics"], base["diagnostics"]
+            msg = (f"**{label[outage]} offline.** Scores and ranking do not change (a disaster says nothing about quality); "
+                   f"only the split re-solves. Emergency purchase: **{dd['spot_buy_vials']:,.0f} vials**. Monthly cost "
+                   f"{usd(bd['monthly_spend_usd'])} → **{usd(dd['monthly_spend_usd'])}** at official US prices"
+                   f"{' plus synthetic freight' if synthetic else ''}. Warm-backup share {dd['warm_backup_share_pct']:.0f}%.")
+            (st.error if dd["spot_buy_vials"] > 0.5 else st.warning)(msg)
+            worst = next((o for o in outs if o["kind"] == "country_worst"), None)
+            if outage == "COUNTRY_INDIA" and worst:
+                wd = decide(str(MATRIX), mode, lam, ent, tuple(worst["groups"]), mtime(MATRIX))["diagnostics"]
+                st.caption(f"Caveat: Fresenius's factory country is not stated. If it is also in India: "
+                           f"{wd['spot_buy_vials']:,.0f} emergency vials and {usd(wd['monthly_spend_usd'])} a month.")
         al = r["allocation"]
         fac = (al.groupby("factory_group")
                .agg(vials=("vials", "sum"), suppliers=("manufacturer_id", lambda s: ", ".join(sorted(s))),
@@ -262,16 +328,21 @@ with tab3:
                          "share_pct": st.column_config.ProgressColumn("Share", min_value=0, max_value=100,
                                                                       format="%.0f%%"),
                          "cap_pct": st.column_config.NumberColumn("Cap", format="%.0f%%")})
-        st.caption("Caps apply per factory (team decision L3). All rankable makers are on probation (no own delivery "
-                   "history with the GPO), so the plan caps each factory at 30% and a chosen trial supplier gets at "
-                   "least 5%. Where one factory sells under several names, the share goes to the factory; the name is "
-                   "interchangeable.")
+        dg = r["diagnostics"]
+        st.caption("Caps apply per factory (team decision L3). " + (
+            "All rankable makers are on probation (no own delivery history with the GPO), so the plan caps each factory "
+            f"at {100 * dg['probation_cap_used']:.0f}% and a chosen trial supplier gets at least 5%. "
+            if dg["established_factories"] == 0 else
+            f"{dg['established_factories']} factories have an established supplier (◆ synthetic delivery records), so "
+            f"each may take up to {100 * dg['tier_cap']:.0f}%, a new supplier up to {100 * dg['probation_cap_used']:.0f}% "
+            "(at least 5% if chosen), and each factory is limited by its ◆ synthetic monthly capacity. ")
+            + "Where one factory sells under several names, the share goes to the factory; the name is interchangeable.")
         sel = al[al["selected"]][["manufacturer_id", "factory_group", "S", "vials", "share_pct", "role"]]
         with st.expander("Order lines by supplier name"):
             st.dataframe(sel, hide_index=True, width="stretch")
 
         st.subheader("Normal vs Crisis vs Cost Focus")
-        comp = pd.DataFrame({md: decide(md, lam, ent, mtime(MATRIX))["ranking"]["S"] for md in MODES})
+        comp = pd.DataFrame({md: decide(str(MATRIX), md, lam, ent, (), mtime(MATRIX))["ranking"]["S"] for md in MODES})
         comp.insert(0, "Supplier", r["ranking"].reindex(comp.index)["labeler_name_fda"])
         st.dataframe(comp.sort_values(mode, ascending=False), width="stretch",
                      column_config={md: st.column_config.NumberColumn(md, format="%.3f") for md in MODES})
@@ -299,19 +370,22 @@ with tab3:
                 st.error("Give a reason for an override or a rejection.")
             else:
                 rec = audit.append(AUDIT_LOG, {
-                    "approver": who.strip(), "decision": decision, "reason": note.strip(), "mode": mode,
+                    "approver": who.strip(), "decision": decision, "reason": note.strip(),
+                    "data_view": "synthetic" if synthetic else "real", "stress_test": outage, "mode": mode,
                     "lambda": lam, "entropy_share": ent, "demand_vials": r["demand"],
                     "weights_used": r["weights"]["Used for ranking"].round(4).to_dict(),
                     "split_vials": {k: v for k, v in sel.set_index("manufacturer_id")["vials"].items()},
                     "spot_buy_vials": r["diagnostics"]["spot_buy_vials"],
+                    "warm_backup_share_pct": r["diagnostics"]["warm_backup_share_pct"],
                     "matrix_sha256": audit.file_sha256(MATRIX)})
                 st.success(f"Logged as record #{rec['seq']} · fingerprint {rec['record_hash'][:16]}…")
         log = audit.read(AUDIT_LOG)
         if log:
             ok, msg = audit.verify(AUDIT_LOG)
             (st.success if ok else st.error)(f"Audit trail check: {msg}")
-            st.dataframe(pd.DataFrame(log)[["seq", "timestamp_utc", "approver", "decision", "mode", "lambda",
-                                            "reason", "record_hash"]], hide_index=True, width="stretch")
+            lg = pd.DataFrame(log)
+            st.dataframe(lg[[c for c in ["seq", "timestamp_utc", "approver", "decision", "data_view", "stress_test", "mode",
+                                         "lambda", "reason", "record_hash"] if c in lg]], hide_index=True, width="stretch")
             st.download_button("Download audit log (JSONL)", AUDIT_LOG.read_bytes(), "audit_log.jsonl",
                                "application/json")
 
@@ -335,8 +409,12 @@ with tab4:
                                     "letter_severity": st.column_config.ProgressColumn(
                                         "severity", min_value=0, max_value=1, format="%.2f")})
     st.subheader("Supplier contracts · clause extractor")
-    st.warning("DEMO ONLY: the 11 contracts are synthetic (invented for testing). Their results are NOT part of any "
-               "score (decision 7).")
+    if synthetic:
+        st.info("◆ Synthetic view: the 11 contracts are synthetic (invented for testing) and here their risk counts for "
+                "20% of the compliance mark (range R6). In the real view they are not scored (decision 7).")
+    else:
+        st.warning("DEMO ONLY: the 11 contracts are synthetic (invented for testing). Their results are NOT part of any "
+                   "score (decision 7).")
     cl = csv(L3_OUT / "c4_contract_clauses.csv")
     if len(cl):
         st.dataframe(cl[["supplier_name", "force_majeure", "lead_time_days", "late_delivery_penalty",

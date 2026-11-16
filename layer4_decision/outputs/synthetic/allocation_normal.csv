@@ -1,0 +1,12 @@
+manufacturer_id,S,landed_cost_usd,is_probation,factory_group,monthly_capacity_units,offline,vials,share_pct,factory_cap_pct,selected,role,probation_badge
+HOSPIRA,0.612576,28.409,False,HOSPIRA_AUSTRALIA,7300,False,3700.0,37.0,70.0,True,Primary,False
+FRESENIUS KABI USA,0.685229,28.3044,False,FRESENIUS_UNKNOWN,3300,False,3300.0,33.0,70.0,True,Backup,False
+GLAND PHARMA,0.888016,28.3482,True,GLAND_VISAKHAPATNAM,3600,False,1500.0,15.0,15.0,True,Additional source,True
+APOTEX,0.812529,28.2566,True,TEYRO_ORAGADAM,1900,False,1500.0,15.0,15.0,True,Additional source,True
+BPI LABS,0.869577,28.3482,True,GLAND_VISAKHAPATNAM,3600,False,0.0,0.0,15.0,False,Not selected,True
+TEYRO LABS,0.779817,28.2566,True,TEYRO_ORAGADAM,1900,False,0.0,0.0,15.0,False,Not selected,True
+AVYXA PHARMA,0.658003,2355.8735,True,AVYXA_SWITZERLAND,3200,False,0.0,0.0,15.0,False,Not selected,True
+TEVA PARENTERAL MEDICINES,0.610211,28.4532,False,PHARMACHEMIE_HAARLEM,5000,False,0.0,0.0,70.0,False,Not selected,False
+NATCO PHARMA USA,0.584878,28.2566,True,TEYRO_ORAGADAM,1900,False,0.0,0.0,15.0,False,Not selected,True
+EUGIA US,0.453113,28.3152,False,EUGIA_UNIT1_KOLTHUR,4700,False,0.0,0.0,70.0,False,Not selected,False
+ACCORD HEALTHCARE,0.277769,28.3716,False,INTAS_PHARMEZ_AHMEDABAD,3100,False,0.0,0.0,70.0,False,Not selected,False

@@ -65,35 +65,40 @@
       "short": "Cost",
       "code": "C1",
       "plain": "How expensive one vial is, compared with the other suppliers.",
-      "method": "Official US Medicare price list (one price for all generics). Freight to the UAE has no data and is left out."
+      "method": "Official US Medicare price list (one price for all generics). Freight to the UAE has no data and is left out.",
+      "method_synthetic": "Synthetic view: official US price + real insurance + synthetic air freight (R3, R5). Mark = how much dearer than the cheapest, capped at 1."
     },
     {
       "id": "C2_delivery_risk",
       "short": "Late delivery",
       "code": "C2",
       "plain": "The chance that a shipment arrives late.",
-      "method": "An XGBoost model that learned from 7,771 real medicine shipments (up to 2013) and was tested on 2,545 later ones. The top 3 reasons are shown for each supplier."
+      "method": "An XGBoost model that learned from 7,771 real medicine shipments (up to 2013) and was tested on 2,545 later ones. The top 3 reasons are shown for each supplier.",
+      "method_synthetic": "Synthetic view: the same trained model, given each supplier's synthetic shipping terms and delivery record (R1-R4, R10, R11)."
     },
     {
       "id": "C3_price_integrity",
       "short": "Billing oddities",
       "code": "C3",
       "plain": "How often the supplier's invoices look unusual.",
-      "method": "An Isolation Forest flags the oddest 5% of invoice lines. A supplier with no invoice history of its own scores 0 (the plan's rule)."
+      "method": "An Isolation Forest flags the oddest 5% of invoice lines. A supplier with no invoice history of its own scores 0 (the plan's rule).",
+      "method_synthetic": "Synthetic view: the Isolation Forest runs on synthetic invoices of the 5 established suppliers (R7); new suppliers keep 0."
     },
     {
       "id": "C4_compliance_risk",
       "short": "Compliance",
       "code": "C4",
       "plain": "How clean the factory's record with the US drug regulator is.",
-      "method": "FDA inspections and warning letters for the factory that makes the product, plus the seller's injectable recalls."
+      "method": "FDA inspections and warning letters for the factory that makes the product, plus the seller's injectable recalls.",
+      "method_synthetic": "Synthetic view: the same FDA record plus 20% from each supplier's synthetic contract (R6)."
     },
     {
       "id": "C5_route_exposure",
       "short": "Route exposure",
       "code": "C5",
       "plain": "How exposed the supply route is to a Hormuz or Gulf-airspace disruption.",
-      "method": "One evidence-based exposure share for every origin, adjusted by the origin country's World Bank logistics score."
+      "method": "One evidence-based exposure share for every origin, adjusted by the origin country's World Bank logistics score.",
+      "method_synthetic": "Synthetic view: a synthetic air-route share per factory (R9), adjusted by the same World Bank logistics score."
     }
   ],
   "evidence_levels": {
@@ -244,11 +249,12 @@
   ],
   "limits": [
     "The late-delivery model learned from HIV-medicine shipments to other regions between 2006 and 2015. It captures how shipping behaves in general, not oncology supply to the Gulf.",
-    "No supplier has its own delivery or invoice history in the data, so all 11 are treated as new suppliers. There is no billing data for any of them, so the billing mark is the same (0) for all and has no effect on the ranking.",
+    "In the real data no supplier has its own delivery or invoice history, so all 11 are treated as new suppliers and the billing mark is the same (0) for all, with no effect on the ranking. The synthetic view shows how the system behaves once such history exists.",
     "Only 50 FDA warning letters were read. A supplier with no letter here may still have one.",
     "Prices are US reimbursement prices. Real tender quotes would replace them in a live system.",
     "Several marks are equal for many suppliers because invented differences were removed. The ranking leans mostly on the FDA record, the delivery model and the country logistics score.",
-    "This is a prototype for a course project. It is not procurement advice."
+    "This is a prototype for a course project. It is not procurement advice.",
+    "The synthetic view fills gaps with invented values. They are plausible, not true: use it to see how the system behaves with fuller data, not to choose a real supplier."
   ],
   "governance": [
     {
@@ -269,69 +275,135 @@
     },
     {
       "title": "AI disclosure",
-      "text": "The code and this site were produced with Claude and reviewed by the team. The contract extraction is AI-generated and is not scored."
+      "text": "The code and this site were produced with Claude and reviewed by the team. The contract extraction is AI-generated; it is not scored in the real view, and is scored (marked synthetic) in the synthetic view."
     }
   ],
   "plan_differences": [
     {
       "plan": "Rank all 18 authorised labelers (§3).",
       "here": "18 confirmed; 11 ranked.",
+      "synthetic": "Same as the real view.",
       "why": "7 of the 18 (including Cipla and Hetero) list only the raw ingredient and cannot supply hospital vials (plan §4.1: only makers authorised for the target product)."
     },
     {
       "plan": "Blend the board's weights 50/50 with data-driven entropy weights (§4.2).",
       "here": "The board's weights decide; entropy is a slider from 0% to 50%.",
-      "why": "With 11 suppliers and many ties, two standard entropy formulas gave opposite weights and the ranking swung. The plan itself lists the entropy slider as optional."
+      "synthetic": "Same as the real view.",
+      "why": "With 11 suppliers and many ties, two standard entropy formulas gave opposite weights and the ranking swung. The plan itself lists the entropy slider as optional (cut order item 3)."
     },
     {
       "plan": "Cost from 2026 tender quotes plus origin freight markups (§4.3).",
       "here": "One official US price for all generics, Avyxa's own price; freight left out.",
+      "synthetic": "The same US price plus synthetic air freight by origin (R3, R5).",
       "why": "No public tender quotes or UAE freight costs exist. Real tender quotes would replace the stand-in in a live pilot."
     },
     {
       "plan": "Late-delivery risk from each maker's shipping mode, terms and freight (§3.1).",
       "here": "Averaged over real past shipments from each factory's country.",
-      "why": "Shipping details for UAE orders are not public, so no single value is guessed."
+      "synthetic": "Each supplier's own synthetic shipping profile and delivery record (R1-R4, R10, R11).",
+      "why": "Shipping details for UAE orders are not public, so the real view guesses no single value."
     },
     {
       "plan": "Route exposure from each origin's Hormuz and Gulf-air share (§4.3).",
       "here": "One evidence-based share, 0.85, for every origin.",
-      "why": "UAE port volumes support one share; no evidence supports different shares by country. The World Bank logistics score still differs by country."
+      "synthetic": "A synthetic air-route share per factory, 0.90-1.00 (R9).",
+      "why": "UAE port volumes support one share; no public evidence gives different shares by country. The World Bank logistics score still differs by country."
     },
     {
       "plan": "Compliance includes an AI reading of each supplier's contract (§4.3).",
       "here": "The contract term is 0 for everyone; the contract reader is a demo.",
-      "why": "The 11 contracts were invented for testing, so scoring them would rank real companies on fiction."
+      "synthetic": "The 11 synthetic contracts are scored and count for 20% of compliance (R6).",
+      "why": "The contracts were invented for testing, so scoring them in the real view would rank real companies on fiction."
     },
     {
       "plan": "Plant capacity is a hard limit in the order split (§4.4).",
       "here": "Capacity never limits the split; the share caps do.",
+      "synthetic": "Synthetic capacity of 1,500-8,000 vials a month per factory (R8).",
       "why": "Factory capacity is not public."
     },
     {
       "plan": "Share caps per supplier (§4.4).",
       "here": "Share caps per factory.",
-      "why": "Official labels show that 11 brand names come from 8 factories. Capping by name would let one factory carry up to 90% through three names."
+      "synthetic": "Same as the real view.",
+      "why": "Several brand names are made in the same factory (Teyro makes Apotex, Natco and Teyro; Gland makes BPI and Gland), so capping names would not spread risk."
     },
     {
-      "plan": "A 70/20/10 example split (§2).",
+      "plan": "Order quantities x ≥ 0 (§4.4).",
+      "here": "Whole vials.",
+      "synthetic": "Same as the real view.",
+      "why": "A vial cannot be split; solving in fractions left orders of 0.1 vial."
+    },
+    {
+      "plan": "A 70/20/10 example split (§1.3, §2, Q&A 4).",
       "here": "30/30/30/10 across four factories.",
-      "why": "Every supplier is new (none has 5 own deliveries on record), so the plan's own probation rule caps each factory at 30%. In a pilot, the GPO's delivery records lift this."
+      "synthetic": "37/33/15/15 across four factories, and Crisis mode changes it.",
+      "why": "The plan's caps (70% established, 15% new) are upper limits, not targets. With no supplier history every factory is capped at 30%; with synthetic history the split prefers the higher-ranked new suppliers up to their 15% cap."
     },
     {
-      "plan": "Probation trial share: 5-10% in the tier table, cap 15% in the order-split rules (§4.2 vs §4.4).",
-      "here": "The order-split rules (§4.4) are followed.",
-      "why": "The plan disagrees with itself; with no established supplier both relax to 30%, so today's result is the same either way."
+      "plan": "Probation trial share: a mandatory 5-10% (§3.1, §4.2, Q&A 5) versus 0 or at least 5%, capped at 15% (§4.4).",
+      "here": "The order-split rules (§4.4) are followed: a new supplier gets 0, or between 5% and its cap if it is chosen (decision L2).",
+      "synthetic": "Same as the real view.",
+      "why": "The plan contradicts itself; §4.4 is the formula the solver needs, and forcing every new supplier in would override the ranking."
     },
     {
       "plan": "A 4-tab Streamlit cockpit with a live AI contract reader (§5.2 step 9).",
-      "here": "A 9-page website plus a local Streamlit tool; the contract reading is cached.",
-      "why": "The team chose Vercel for the showcase. A cached reading instead of a live AI call is the plan's own contingency (§5.2 cut order)."
+      "here": "The Streamlit cockpit (4 tabs plus a data-pipeline tab) and a 9-page website; the contract reading is cached.",
+      "synthetic": "Same as the real view.",
+      "why": "The website lets anyone explore without installing Python. A cached contract reading is the plan's own fallback (cut order item 2)."
     },
     {
       "plan": "Scenario stress-testing (Q7).",
       "here": "Natural-disaster stress test: any factory or every factory in India offline.",
+      "synthetic": "Same as the real view.",
       "why": "Shows what dual sourcing protects against, using only real factory locations; no invented probabilities."
+    },
+    {
+      "plan": "Cost mark scaled from the cheapest (0) to the dearest (1) supplier (§4.3).",
+      "here": "The plan's formula.",
+      "synthetic": "How much more expensive than the cheapest, capped at 1.",
+      "why": "With synthetic freight, a 30-cent difference on a $28 vial would otherwise fill the whole 0-to-1 scale. On the real data both formulas give exactly the same marks."
+    },
+    {
+      "plan": "Real or scenario data for every input (§3).",
+      "here": "Evidence only: a cited source or 'no data'.",
+      "synthetic": "Gaps filled with values from approved industry ranges, each marked.",
+      "why": "Asked for by the course professor. Every synthetic value is marked, its range and source are listed, and no model is trained on it."
+    },
+    {
+      "plan": "An active FDA shortage adds a penalty to compliance (§3.2 dataset table).",
+      "here": "Shortages are shown as alerts and badges, not scored.",
+      "synthetic": "Same as the real view.",
+      "why": "The plan's own compliance formula (§4.3) has no shortage term, so the formula was followed; a shortage tells the buyer to confirm supply, it does not measure quality."
+    },
+    {
+      "plan": "World Bank political stability (WGI) as a route input (§3.2 dataset table).",
+      "here": "Fetched and shown in the Streamlit profile, not scored.",
+      "synthetic": "Same as the real view.",
+      "why": "The plan's route formula (§4.3) uses only the logistics score (LPI)."
+    },
+    {
+      "plan": "Monthly model retraining and a 3-6 month probation until the buyer's own delivery history builds up (Layer 5, §3.1).",
+      "here": "Not built: described as part of the 90-day pilot.",
+      "synthetic": "The synthetic delivery record shows what that history would change.",
+      "why": "Both need the buyer's own deliveries over time, which a prototype cannot have."
+    },
+    {
+      "plan": "Tier 1 needs the highest safety stock (§4.2).",
+      "here": "Not modelled.",
+      "synthetic": "Same as the real view.",
+      "why": "The plan gives no number or rule for safety stock; the split covers one month's demand."
+    },
+    {
+      "plan": "USAID GHSC-PSM data as an out-of-time check for the delivery model (§3.2, optional).",
+      "here": "Not used.",
+      "synthetic": "Same as the real view.",
+      "why": "The plan's own cut order drops it first; the model is checked on 2014-2015 shipments it never saw."
+    },
+    {
+      "plan": "A live openFDA shortage feed (Q7).",
+      "here": "Website: snapshot of 15 Nov 2026 plus a live FDA check button. Streamlit: live pull.",
+      "synthetic": "Same as the real view.",
+      "why": "A static website cannot call the FDA on every page load without slowing every reader; the live button does it on request."
     }
   ]
 }

@@ -4,6 +4,8 @@ Dual-source order split (plan 4.4), solved with PuLP (CBC).
   minimise   sum_i [ LandedCost_i + lambda * MeanCost * (1 - S_i) ] * x_i  +  M * u
   subject to sum_i x_i + u = D                                   demand (u = emergency spot buy, M = 1e6)
              x_i <= MonthlyCapacity_i                            plant capacity
+             sum_{i in factory g} x_i <= MonthlyCapacity_g      capacity PER FACTORY (names sharing a factory share it)
+             x_i integer                                         whole vials: a continuous solve left 0.1-vial orders
              sum_{i in factory g} x_i <= cap_g * D               concentration cap PER FACTORY (team decision L3)
              probation maker i:  0.05*D*y_i <= x_i <= pcap*D*y_i  y_i in {0,1}: 0 or a trial share (decision L2)
              pcap = 0.15 when at least 2 established factories exist, else 0.30 (plan 4.4)
@@ -71,7 +73,7 @@ def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float, offline
     d["unit_objective"] = d["landed_cost_usd"] + lam * mean_cost * (1 - d["S"])
 
     prob = pulp.LpProblem("pharmashield_order_split", pulp.LpMinimize)
-    x = {i: _var(prob, f"x_{i}", lowBound=0) for i in d.index}
+    x = {i: _var(prob, f"x_{i}", lowBound=0, cat="Integer") for i in d.index}   # whole vials (no 0.1-vial orders)
     y = {i: _var(prob, f"y_{i}", cat="Binary") for i in d.index if bool(d.at[i, "is_probation"])}
     u = _var(prob, "spot_buy", lowBound=0)
     supply_cost = pulp.lpSum(float(d.at[i, "unit_objective"]) * x[i] for i in d.index)
@@ -87,6 +89,8 @@ def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float, offline
         cap = pcap if bool(groups[g]) else tier_cap
         group_cap[g] = cap
         prob += pulp.lpSum(x[i] for i in members) <= cap * demand, f"factory_cap_{len(group_cap)}"
+        fac_capacity = 0.0 if bool(d.loc[members, "offline"].any()) else float(d.loc[members, "monthly_capacity_units"].max())
+        prob += pulp.lpSum(x[i] for i in members) <= fac_capacity, f"factory_capacity_{len(group_cap)}"
     solver_name = solve(prob)
     status = prob.status
     best_cost = pulp.value(prob.objective) or 0.0
@@ -110,7 +114,7 @@ def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float, offline
             tie_break = f"not applied (second solve: {pulp.LpStatus[prob.status]}); first optimal solution kept"
         status = 1                               # the reported result is the stage-1 optimum or an equal-cost one
 
-    d["vials"] = [round(x[i].value() or 0.0, 1) for i in d.index]
+    d["vials"] = [round(x[i].value() or 0.0, 1) + 0.0 for i in d.index]      # + 0.0: no "-0.0"
     d["share_pct"] = (100 * d["vials"] / demand).round(2)
     d["factory_cap_pct"] = d["factory_group"].map(group_cap) * 100
     d["selected"] = d["vials"] > 0.5
@@ -130,6 +134,10 @@ def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float, offline
             "established_factories": n_established, "probation_cap_used": pcap,
             "factories_used": int((by_factory > 0.5).sum()), "makers_used": int(d["selected"].sum()),
             "largest_factory_share_pct": round(100 * float(by_factory.max()) / demand, 2),
+            # plan Q7 "warm-backup share": vials placed with factories other than the primary one - supply that is
+            # already approved and shipping, so it can be scaled up at once if the primary fails
+            "warm_backup_share_pct": round(100 * float(by_factory.sum() - by_factory.max()) / demand, 2),
+            "meets_two_supplier_minimum": bool((by_factory > 0.5).sum() >= 2),   # plan 4.2: Tier 1 minimum 2 makers
             "objective_value": round(best_cost, 2),
             "offline_factories": sorted(offline), "tie_break": tie_break,
             "monthly_spend_usd": round(float((d["vials"] * d["landed_cost_usd"]).sum()), 2),

@@ -109,6 +109,36 @@ await go('#/'); await go('#/split?outage=COUNTRY_INDIA');
 check('a link can open the stress test', await ev('PS.state.outage === "COUNTRY_INDIA" && document.getElementById("outage").value === "COUNTRY_INDIA"'));
 await pickOutage('none');
 
+// plan Q7 warm-backup share, Q2 World Bank score, plan 4.2 two-supplier rule (decision S5)
+check('split page shows the warm-backup share from Layer 4', (await ev('document.getElementById("view").textContent')).includes('Warm-backup share') && (await ev('document.getElementById("view").textContent')).includes(Math.round(await ev('PS.scenario().backup')) + '%'));
+check('split page states the Tier 1 two-supplier rule', (await ev('document.getElementById("view").textContent')).includes('at least 2 suppliers'));
+await go('#/suppliers?supplier=HOSPIRA');
+check('supplier detail shows the World Bank logistics score and route share', (await ev('document.getElementById("detail").textContent')).includes('World Bank Logistics Performance Index') && (await ev('document.getElementById("detail").textContent')).includes('Cost and route'));
+await go('#/compare');
+check('compare shows the country logistics score', (await ev('document.getElementById("view").textContent')).includes('Country logistics score'));
+await go('#/split');
+
+// synthetic view switch (decision S4)
+check('data switch is in the side bar, real view by default', await ev('!!document.querySelector("[data-view=synthetic]") && PS.state.view === "real" && document.querySelector("[data-view=real]").getAttribute("aria-pressed") === "true"'));
+const realSplit = await ev('JSON.stringify(PS.scenario("Normal", 1, 0).vials)');
+await ev('document.querySelector("[data-view=synthetic]").click()'); await sleep(200);
+check('switching to synthetic shows the synthetic banner', (await ev('document.getElementById("view").textContent')).includes('Synthetic view.'));
+check('synthetic view changes the order split', (await ev('JSON.stringify(PS.scenario("Normal", 1, 0).vials)')) !== realSplit);
+check('synthetic view has established suppliers and the 70% / 15% caps', await ev('PS.data.modes.Normal.established_factories > 0 && PS.data.modes.Normal.probation_cap === 0.15'));
+check('synthetic values are marked on the page', await ev('document.querySelectorAll(".syn-tag").length > 2'));
+await go('#/suppliers?supplier=HOSPIRA');
+check('supplier detail lists its synthetic inputs', (await ev('document.getElementById("detail").textContent')).includes('Synthetic inputs for this supplier'));
+await go('#/documents');
+check('in the synthetic view the contracts banner says they are scored', (await ev('document.getElementById("view").textContent')).includes('these contracts are scored'));
+await go('#/trust');
+check('Evidence & trust lists every synthetic range with its basis', (await ev('document.getElementById("view").textContent')).includes('every invented value and its basis') && (await ev('[...document.querySelectorAll(".syn-tag")].filter(t => /^R\\d/.test(t.textContent.trim())).length')) >= 12);
+await ev('document.querySelector("[data-view=real]").click()'); await sleep(200);
+check('switching back restores the real split exactly', (await ev('JSON.stringify(PS.scenario("Normal", 1, 0).vials)')) === realSplit && !(await ev('document.getElementById("view").textContent')).includes('Synthetic view.'));
+await go('#/'); await go('#/split?view=synthetic');
+check('a link can open the synthetic view', await ev('PS.state.view === "synthetic"'));
+await ev('document.querySelector("[data-view=real]").click()'); await sleep(150);
+await go('#/split');
+
 // approval: validation, log, verification, tamper detection
 await ev('localStorage.removeItem("pharmashield_audit_v1")'); await go('#/'); await go('#/split');
 await ev('document.querySelector("#approve-form button[type=submit]").click()'); await sleep(200);
@@ -143,7 +173,7 @@ check(`glossary search narrows the list (${all} -> ${some})`, some > 0 && some <
 check('search box keeps focus-able state', await ev('document.getElementById("gloss-search").value === "OAI"'));
 
 await go('#/trust');
-check('Trust page lists every difference from the plan', (await ev('document.getElementById("view").textContent')).includes('Where this differs from the project plan') && (await ev('[...document.querySelectorAll("#view h2")].find(h => h.textContent.includes("differs")).parentElement.querySelectorAll("tbody tr").length')) === 12);
+check('Trust page lists every difference from the plan', (await ev('document.getElementById("view").textContent')).includes('Where this differs from the project plan') && (await ev('[...document.querySelectorAll("#view h2")].find(h => h.textContent.includes("differs")).parentElement.querySelectorAll("tbody tr").length')) === (await ev('PS.data.content.plan_differences.length')));
 
 // theme toggle, deep link
 await ev('document.getElementById("theme-toggle").click()');

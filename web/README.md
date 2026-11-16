@@ -20,7 +20,9 @@ understand them without running Python.
 The site is plain HTML, CSS and JavaScript: no framework, no build step, no packages. It cannot run Python, so
 `tools/export_web_snapshot.py` runs the **real** Layer 4 engine for every setting the reader can choose (3 situations ×
 13 risk-dial steps × 6 data-weight steps = 234 scenarios), plus the natural-disaster stress test for each of them (10 outages, 2,340 more results), and stores
-the results in `web/data/snapshot.json` (about 560 KB). The site only looks results up, so every number matches the Python pipeline exactly.
+the results in `web/data/snapshot.json` (about 1 MB). Everything is solved twice: once for the real view and once for
+the **synthetic view** (`synthetic/`, decision S4). A switch in the side bar chooses between them; every synthetic value
+is marked with a purple "synthetic" tag, and the Evidence & trust page lists each range with its source. The site only looks results up, so every number matches the Python pipeline exactly.
 
 Team decisions for the website (docs/DECISIONS.md, V1–V2):
 
@@ -33,7 +35,7 @@ Privacy and security: no personal data in the snapshot (checked by the tests); a
 Content-Security-Policy in `vercel.json` (scripts only from the site itself, network calls only to the site and
 `api.fda.gov`, no framing).
 
-Links can open a setting directly, for example `#/split?outage=COUNTRY_INDIA` (stress test: every factory in India
+Links can open a setting directly, for example `#/split?view=synthetic` (synthetic view), `#/split?outage=COUNTRY_INDIA` (stress test: every factory in India
 offline) or `#/compare?a=APOTEX&b=TEYRO LABS`.
 
 ## Deploy on Vercel
@@ -48,16 +50,17 @@ offline) or `#/compare?a=APOTEX&b=TEYRO LABS`.
 After re-running the pipeline (Layer 1 → Layer 3), regenerate the snapshot and redeploy:
 
 ```bash
-python tools/export_web_snapshot.py     # runs Layer 4 for all 234 scenarios + stress tests -> web/data/snapshot.json
+python synthetic/build_synthetic.py     # synthetic view (optional; the site hides the switch without it)
+python tools/export_web_snapshot.py     # runs Layer 4 for all 234 scenarios + stress tests, both views -> web/data/snapshot.json
 node tools/test_web.mjs                 # 6 checks on the snapshot and the browser-side logic
-python tools/check_consistency.py       # 51 checks: plan vs pipeline vs website
+python tools/check_consistency.py       # 69 checks: plan vs pipeline vs website
 ```
 
 ## Test locally
 
 ```bash
 node tools/serve_web.mjs                # http://127.0.0.1:8766/ with the same security headers as Vercel
-node tools/e2e_web.mjs                  # 58 checks in headless Chrome (CHROME=... to point at another browser)
+node tools/e2e_web.mjs                  # 72 checks in headless Chrome (CHROME=... to point at another browser)
 ```
 
 If you change the small script inside `index.html`, update its `sha256-…` value in `vercel.json`;

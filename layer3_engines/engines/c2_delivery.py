@@ -202,16 +202,24 @@ def marginal_predictions(model: xgb.XGBClassifier, w: float, pnl: pd.DataFrame, 
     """Evidence rule, team decision item 6 (15 Nov 2026): shipping mode, delivery terms, freight ratio and weight
     are NOT known for 2026 carboplatin shipments to the UAE. Instead of one invented value, each maker's C2 is the
     AVERAGE prediction over real SCMS training shipments from the same plant country (all training shipments when
-    that country has fewer than 30). Only the maker's real facts (plant country, own site history) are fixed."""
+    that country has fewer than 30). Only the maker's real facts (plant country, own site history) are fixed.
+    Synthetic view (synthetic/, decision S4): when the panel row says inputs_fixed, the maker's shipping profile is
+    a labelled synthetic value, so the model predicts on that single profile instead of averaging. The trained
+    model is the same; nothing is re-fitted on synthetic data."""
     booster = model.get_booster()
     rows = []
     for _, r in pnl.iterrows():
         real_c = str(r.get("manufacturing_country_real", r["manufacturing_country"]))
-        pool = train[train["manufacturing_country"] == real_c]
-        basis = f"real shipments from {real_c}"
-        if len(pool) < MIN_COUNTRY_TRAIN:
-            pool, basis = train, "real shipments from all countries (fewer than 30 from this country)"
-        smp = pool.sample(n=min(PROFILE_SAMPLE, len(pool)), random_state=SEED)[UNKNOWN_INPUTS].copy()
+        fixed = bool(r.get("inputs_fixed", False))
+        if fixed:
+            smp = pd.DataFrame([{c: r[c] for c in UNKNOWN_INPUTS}])
+            basis = "synthetic shipping profile for UAE orders"
+        else:
+            pool = train[train["manufacturing_country"] == real_c]
+            basis = f"real shipments from {real_c}"
+            if len(pool) < MIN_COUNTRY_TRAIN:
+                pool, basis = train, "real shipments from all countries (fewer than 30 from this country)"
+            smp = pool.sample(n=min(PROFILE_SAMPLE, len(pool)), random_state=SEED)[UNKNOWN_INPUTS].copy()
         smp["manufacturing_country"] = r["manufacturing_country"]
         smp["site_prior_late_rate"] = r["site_prior_late_rate"]
         smp["site_prior_n"] = r["site_prior_n"]
@@ -225,17 +233,20 @@ def marginal_predictions(model: xgb.XGBClassifier, w: float, pnl: pd.DataFrame, 
                      "model_country": raw["manufacturing_country"].iloc[0],
                      "shipment_profile": f"{basis} (n={len(smp)})",
                      "site_prior_shipments": int(r["site_prior_n"]),
-                     "shap_top3_reasons": top3_json(sh, raw.iloc[0], averaged=f"{basis}", real_country=real_c)})
+                     "shap_top3_reasons": top3_json(sh, raw.iloc[0], averaged=None if fixed else f"{basis}",
+                                                    real_country=real_c, synthetic=fixed)})
     return pd.DataFrame(rows)
 
 
 def top3_json(shap_row: pd.Series, raw_row: pd.Series, averaged: str | None = None,
-              real_country: str | None = None) -> str:
+              real_country: str | None = None, synthetic: bool = False) -> str:
     top = shap_row.reindex(shap_row.abs().sort_values(ascending=False).index)[:3]
     out = []
     for g, v in top.items():
         val = (f"not known for UAE shipments: averaged over {averaged}" if averaged and g in UNKNOWN_GROUPS
                else describe_value(g, raw_row))
+        if synthetic and (g in UNKNOWN_GROUPS or (g == "site_prior" and float(raw_row["log_site_prior_n"]) > 0)):
+            val += " (synthetic)"
         if g == "manufacturing_country" and real_country and val == "Other" and real_country != "Other":
             val = f"{real_country} (too few past shipments to model on its own; grouped with other small countries)"
         out.append({"feature": FEATURE_LABELS.get(g, g), "value": val,
@@ -275,6 +286,7 @@ def panel_frame(inf: pd.DataFrame, global_rate: float) -> pd.DataFrame:
 
 
 def run(scms: pd.DataFrame, inf: pd.DataFrame) -> dict:
+    """inf may carry inputs_fixed=True rows (synthetic view): see marginal_predictions."""
     train, test, countries, g = training_frames(scms)
     log.info("C2: train %d rows (late %.1f%%), test %d rows (late %.1f%%)",
              len(train), 100 * train["late"].mean(), len(test), 100 * test["late"].mean())

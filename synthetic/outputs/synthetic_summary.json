@@ -1,0 +1,15 @@
+{
+  "seed": 42,
+  "established": [
+    "ACCORD HEALTHCARE",
+    "EUGIA US",
+    "FRESENIUS KABI USA",
+    "HOSPIRA",
+    "TEVA PARENTERAL MEDICINES"
+  ],
+  "c2_model_test_roc_auc_unchanged": 0.7975,
+  "c3_invoice_lines": 258,
+  "c3_flagged": 13,
+  "c3_injected_errors": 8,
+  "c3_injected_errors_caught": 8
+}

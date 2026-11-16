@@ -50,7 +50,9 @@ Every number that feeds a score must fall into one of three levels:
 | V2 | What happens to the Streamlit app | Kept as the local operator tool for re-running the pipeline; the Vercel site is the showcase |
 | L6 | Ties between interchangeable suppliers (found while building the website) | The solver's tolerance let the chosen name flip between equal suppliers (e.g. Gland vs BPI) as the risk dial moved. Fixed: zero optimality gap, and ties are broken in a second solve by name, so equal suppliers always resolve the same way. No split changed by factory. |
 | S1 | Natural-disaster stress test (plan rubric Q7, requested 16 Nov 2026) | A factory or a whole country can be taken offline; the order split re-solves, the ranking does not change (a disaster says nothing about quality). Tested: any single factory, every factory in India (4 of 8), and the worst case where Fresenius's unstated factory is also in India. Festivals and heatwaves were not added: no evidence ties them to carboplatin supply. |
-| S2 | Plan, pipeline and website must not disagree | `tools/check_consistency.py` checks 51 points: the plan's constants in the code, the website's numbers against Layer 4, the site's text against the data, and that each deliberate difference is listed on the Evidence & trust page. |
+| S2 | Plan, pipeline and website must not disagree | `tools/check_consistency.py` checks 69 points: the plan's constants in the code, the website's numbers against Layer 4, the site's text against the data, and that each deliberate difference is listed on the Evidence & trust page. |
+| S5 | Final plan audit (16 Nov 2026): every plan item traced in `docs/PLAN_TRACEABILITY.md` | Added: warm-backup share KPI (plan Q7) and the Tier 1 two-supplier check (plan 4.2) in Layer 4, the website and Streamlit; the World Bank logistics score on the website's supplier pages (plan Q2); the stress test and synthetic view in Streamlit; 6 more rows in the plan-differences table (shortage penalty, political stability, retraining and probation length, safety stock, GHSC-PSM, live feed) and a synthetic-view column; notebook 01 run (cached data of 15 Nov 2026, identical outputs); notebook 03 extended; GenAI prompt log PDF; Q&A answers that match the results (`docs/QA_DEFENSE.md`). The 17 open technical choices (A, B5, C, D) approved as they are. |
+| S4 | Synthetic data where no evidence exists (course professor's advice, approved 16 Nov 2026: "all as recommended") | A second, clearly marked **synthetic view**; the real view is unchanged. Values drawn once (seed 42) from the approved ranges in `synthetic/reference/synthetic_ranges.csv` (R1-R11, each with its industry or real-data basis): air shipping and delivery terms, vial weight and shipment size, air freight by origin, the existing 11 synthetic contracts switched on, invoices with 1-4% errors, factory capacity scaled by real US market share, Hormuz/Gulf-airspace share 0.90-1.00 for air, and 6-24 past deliveries at 80-95% on time for the 5 suppliers with at least 9% US market share (the other 6 stay new). Models are not trained on synthetic data (the late-delivery model's test score is unchanged); the billing model is fitted on the synthetic invoices because it has no accuracy score to protect. Cost mark changed to "% above the cheapest, capped at 1" (identical on real data). Capacity now applies per factory. Code: `synthetic/build_synthetic.py`, 9 tests. |
 | S3 | Billing oddities (C3) with no data (raised 16 Nov 2026) | No supplier has its own invoices, so C3 is 0 for all 11 (plan rule for new suppliers). Checked: removing its 5% weight leaves every score, rank and vial unchanged. The site now labels it "no data · no effect" instead of showing 0.00, which could read as "clean". |
 | L5 | Entropy (data-driven) weights | The board's tier weights drive the ranking; the plan's "live entropy slider" defaults to 0% (max 50%). Reason: on this panel two standard entropy formulas gave opposite weights (cost 46% vs delivery + route 74%) and the ranking swung (Avyxa 2nd vs 11th). |
 
@@ -58,35 +60,37 @@ Every number that feeds a score must fall into one of three levels:
 
 ## A. Choices that change the results
 
-| ID | Area | Claude's choice (not confirmed) | Where | Importance | Your decision |
+| ID | Area | Claude's choice | Where | Importance | Your decision |
 |---|---|---|---|---|---|
 | A1 | Layer 2: name matching | Wrote the "manual check on the top 20 matches" itself: rejected *Gland Chemicals* (said to be a separate API company) and *Fresenius Kabi Compounding* (a US compounding business). **Neither fact was verified.** | `layer1_ingestion/reference/entity_match_decisions.csv` | High | **Keep both rejections** (decided 15 Nov 2026). Checked: Fresenius Kabi Compounding is a US sterile-compounding facility (Canton, MA; warning letter May 2026), not a carboplatin plant. Gland Chemicals is a heparin/API maker; its relationship to Gland Pharma is **still unconfirmed**. |
 | A2 | Layer 2: sister companies | Counted Fresenius's Austrian, German and Italian plants towards Fresenius USA, and Apotex's India plants towards Apotex. (Apotex's carboplatin is actually made by Teyro Labs.) | same file | High | **Only the company itself and the factory that makes the product** (decided 15 Nov 2026). Applied: Apotex's 2 research/chemical plants and Fresenius's European plants (Austria, Germany, Italy, Sweden) are now rejected. Result: Apotex's inspections 3 → 1 (only Teyro Labs, the real factory); no C4 score changed. **Follow-up decided:** the Canadian parent's (Apotex Inc.) sterility warning letter and plants do **not** count; Apotex's C4 fell 0.534 → 0.400. **Still open from this rule:** Apotex's 3 "injectable" recalls are really **eye drops** (my filter matched the word "sterile": bug, to be fixed under A8), and Fresenius's reliance on the Baddi, India plant (see B3). **Both since closed:** the eye-drop bug is fixed (evidence rule item 8) and Fresenius's country is Unknown (item 1). |
-| A3 | Layer 2: how strict the matching is | Added a rule that the distinctive part of a name must agree (threshold 85). This removed false links such as Teva↔Sun. | `ingestion/scenario.py` (`CORE_MATCH_MIN`) | Med | |
-| A4 | Layer 3 / C4: warning-letter severity | Sterility = 1.0, data integrity = 1.0, process validation = 0.6, quality unit = 0.5 | `layer3_engines/engines/c4_compliance.py` | High | |
-| A5 | Layer 3 / C4: warning-letter sorting | There are no human-labelled letters, so the "answer key" is which FDA regulations each letter cites, plus a few phrase rules for raw-ingredient letters | `c4_compliance.py` (`CFR_RULES`) | High | |
+| A3 | Layer 2: how strict the matching is | Added a rule that the distinctive part of a name must agree (threshold 85). This removed false links such as Teva↔Sun. | `ingestion/scenario.py` (`CORE_MATCH_MIN`) | Med || Kept, approved by the team lead (16 Nov 2026) |
+| A4 | Layer 3 / C4: warning-letter severity | Sterility = 1.0, data integrity = 1.0, process validation = 0.6, quality unit = 0.5 | `layer3_engines/engines/c4_compliance.py` | High || Kept, approved by the team lead (16 Nov 2026) |
+| A5 | Layer 3 / C4: warning-letter sorting | There are no human-labelled letters, so the "answer key" is which FDA regulations each letter cites, plus a few phrase rules for raw-ingredient letters | `c4_compliance.py` (`CFR_RULES`) | High || Kept, approved by the team lead (16 Nov 2026) |
 | A6 | Layer 3 / C4: contract risk scale | Each clause scored 0, 0.5 or 1 (lead time = (days − 30) ÷ 60, capped at 0 to 1). Four clauses weighted equally. A supplier with no contract gets a neutral 0.5. | `c4_compliance.py` | High | **Superseded** by evidence rule item 7: the contracts are synthetic, so the contract term is 0 for every supplier; this scale is used only by the demo reader. |
-| A7 | Layer 3 / C4: who read the contracts | Claude read the 11 contracts in a chat session and saved the result; there was no live AI call. A rule-based reader agrees on all 11. | `layer3_engines/reference/contract_extraction_llm.json` | High | |
-| A8 | Layer 3 / C4: which recalls and inspections count | Only sterile-injectable recalls; only manufacturing-quality inspections; only at plants in the maker's own country (falls back to all plants, flagged). The plan says "Class I/II recalls" and "worst plant". | `ingestion/scenario.py` | High | |
-| A9 | Layer 3 / C2: "no history" input | Removed the number-of-past-shipments input, because it made brand-new suppliers look safest. Unknown history now gets the overall average late rate. | `layer3_engines/engines/c2_delivery.py` | High | |
+| A7 | Layer 3 / C4: who read the contracts | Claude read the 11 contracts in a chat session and saved the result; there was no live AI call. A rule-based reader agrees on all 11. | `layer3_engines/reference/contract_extraction_llm.json` | High || Kept, approved by the team lead (16 Nov 2026) |
+| A8 | Layer 3 / C4: which recalls and inspections count | Only sterile-injectable recalls; only manufacturing-quality inspections; only at plants in the maker's own country (falls back to all plants, flagged). The plan says "Class I/II recalls" and "worst plant". | `ingestion/scenario.py` | High || Kept, approved by the team lead (16 Nov 2026) |
+| A9 | Layer 3 / C2: "no history" input | Removed the number-of-past-shipments input, because it made brand-new suppliers look safest. Unknown history now gets the overall average late rate. | `layer3_engines/engines/c2_delivery.py` | High || Kept, approved by the team lead (16 Nov 2026) |
 | A10 | Layer 3 / C2: scale of the score | Converted the model's inflated answer back to a true chance. C2 is about 0.24, not about 0.9. The plan does not say to do this. | `c2_delivery.py` (`prior_correct`) | Med | Still applied. Current C2 values (0.026 to 0.103) are after evidence rule item 6 (averaged over real shipments from each factory's country). |
-| A11 | Layer 3 / C2: tuning | Picked tree settings on the 2013 data by ROC-AUC, and picked the catch-late-shipments weight by F2 (recall counts double). Test years (2014–15) were never used for choosing. | `c2_delivery.py` | Med | |
-| A12 | Layer 3 / C3: which lines are scored | Skipped 1,836 billing lines with no freight figure; only the ARV and HRDT product groups are modelled; a supplier with history but no scorable lines gets C3 = 0.0. | `layer3_engines/engines/c3_anomaly.py` | Med | |
+| A11 | Layer 3 / C2: tuning | Picked tree settings on the 2013 data by ROC-AUC, and picked the catch-late-shipments weight by F2 (recall counts double). Test years (2014–15) were never used for choosing. | `c2_delivery.py` | Med || Kept, approved by the team lead (16 Nov 2026) |
+| A12 | Layer 3 / C3: which lines are scored | Skipped 1,836 billing lines with no freight figure; only the ARV and HRDT product groups are modelled; a supplier with history but no scorable lines gets C3 = 0.0. | `layer3_engines/engines/c3_anomaly.py` | Med || Kept, approved by the team lead (16 Nov 2026) |
 
 ## B. Data values Claude chose for Layer 1 (feed Layers 2 and 3)
 
 These were applied after you said "fix it", but **you did not see the actual numbers first.**
 
-| ID | Item | Claude's choice (not confirmed) | Where | Importance | Your decision |
+| ID | Item | Claude's choice | Where | Importance | Your decision |
 |---|---|---|---|---|---|
 | B1 | Monthly capacity per maker | Hospira 8,000 · Fresenius 7,000 · Teva 6,000 · Accord 5,000 · Eugia 5,000 · Gland 4,000 · Apotex 3,000 · Natco 2,500 · Teyro 1,500 · BPI 1,500 · Avyxa 1,000. **Made up** to reflect company size. | `reference/manufacturer_overrides.csv` | High | ~~Keep~~ **Replaced** by the evidence rule, item 3 (15 Nov 2026): no data, so non-limiting for all makers. |
 | B2 | Share of cargo passing Hormuz, by origin country | India 0.545 · China 0.75 · USA 0.85 · EU about 0.89 · Japan/Korea 0.64 · Australia 0.53 · South Africa 0.50. **Geographic reasoning, not data.** | `reference/scenario_corridor_assumptions.csv` | High | **Replaced** by evidence rule item 5: one share, 0.85, for every origin (UAE port volumes). |
 | B3 | Plant country for BPI Labs and Fresenius Kabi | India. Thin evidence (a shortage-list note and a Singapore register entry). Verify on DailyMed. | `manufacturer_overrides.csv` | Med | **Replaced** by evidence rule items 1 and 2: BPI's product is made at Gland Pharma's Visakhapatnam factory, India (label + FDA registry); Fresenius's label names no factory, so its country is Unknown. |
 | B4 | Plant country for Hospira and Avyxa | Australia and Switzerland. **Checked on DailyMed**; Hospira's is inferred from the registered factory's name. | `manufacturer_overrides.csv` | Low | Kept (evidence rule item 1). |
-| B5 | Cost mark for the branded Avyxa product | Capped at 1.0 and left out of the scaling (price about 84× the generics). | `ingestion/scenario.py` | Med | |
+| B5 | Cost mark for the branded Avyxa product | Capped at 1.0 and left out of the scaling (price about 84× the generics). | `ingestion/scenario.py` | Med || Kept, approved by the team lead (16 Nov 2026) |
 | B6 | Shipping contract terms, vial weight, freight per vial for every maker | DDP terms, 0.12 kg per vial, freight by origin. **Same assumption for all makers.** | `ingestion/config.py`, corridor file | High | **Replaced** by evidence rule items 4 and 6: freight is left out of cost (no data), and C2 no longer uses an assumed shipping term. |
 
 ## C. Technical settings
+
+All settings below were kept and approved by the team lead (16 Nov 2026).
 
 | ID | Setting | Value | Where |
 |---|---|---|---|
@@ -103,11 +107,11 @@ These were applied after you said "fix it", but **you did not see the actual num
 
 | ID | What | Your decision |
 |---|---|---|
-| D1 | Marked Layer 2 and Layer 3 as "done" in the README | |
+| D1 | Marked Layer 2 and Layer 3 as "done" in the README || Kept, approved by the team lead (16 Nov 2026) |
 | D2 | `run_engines.py` overwrites `data/processed/suppliers_matrix.csv` in place. Re-running Layer 1 wipes C2–C4, so Layer 3 must be re-run after it. | Guarded: the Streamlit pipeline tab runs Layer 3 straight after Layer 1, and Layer 4 refuses to run if any mark is empty. |
-| D3 | Added `xgboost` and `scikit-learn` to the root `requirements.txt` | |
-| D4 | Added the Layer 3 notebook and the second prompt log (`GENAI_PROMPT_LOG_layer2_3.md`) | |
-| D5 | Git-ignored the 25 MB FDA inspections file and the Layer 3 outputs folder | |
+| D3 | Added `xgboost` and `scikit-learn` to the root `requirements.txt` || Kept, approved by the team lead (16 Nov 2026) |
+| D4 | Added the Layer 3 notebook and the second prompt log (`GENAI_PROMPT_LOG_layer2_3.md`) || Kept, approved by the team lead (16 Nov 2026) |
+| D5 | Git-ignored the 25 MB FDA inspections file and the Layer 3 outputs folder || Kept, approved by the team lead (16 Nov 2026) |
 
 ---
 

@@ -2,7 +2,7 @@
    computed (data/snapshot.json). It never recomputes a score, so its numbers match the pipeline exactly. */
 window.PS = (function () {
   'use strict';
-  const PS = { data: null, state: { mode: 'Normal', lam: 1, ent: 0, supplier: null, outage: 'none' } };
+  const PS = { data: null, raw: null, state: { mode: 'Normal', lam: 1, ent: 0, supplier: null, outage: 'none', view: 'real' } };
 
   PS.esc = function (v) {
     return String(v === null || v === undefined ? '' : v)
@@ -24,7 +24,8 @@ window.PS = (function () {
     info: '<circle cx="8" cy="8" r="7" fill="var(--accent)"/><path d="M8 7.2v4" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><circle cx="8" cy="4.8" r=".9" fill="#fff"/>',
     nodata: '<circle cx="8" cy="8" r="6.2" fill="none" stroke="var(--muted)" stroke-width="1.6"/><path d="M5 8h6" stroke="var(--muted)" stroke-width="1.6" stroke-linecap="round"/>',
     'new': '<circle cx="8" cy="8" r="7" fill="var(--accent)"/><path d="M8 4.4v7.2M4.4 8h7.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>',
-    gear: '<circle cx="8" cy="8" r="7" fill="var(--accent)"/><circle cx="8" cy="8" r="2.4" fill="#fff"/>'
+    gear: '<circle cx="8" cy="8" r="7" fill="var(--accent)"/><circle cx="8" cy="8" r="2.4" fill="#fff"/>',
+    syn: '<path d="M8 1.2l6.8 6.8L8 14.8 1.2 8z" fill="var(--syn)"/><path d="M8 4.6l3.4 3.4L8 11.4 4.6 8z" fill="#fff"/>'
   };
   PS.icon = function (name) {
     return '<svg class="ic" viewBox="0 0 16 16" aria-hidden="true">' + (ICONS[name] || ICONS.info) + '</svg>';
@@ -36,6 +37,23 @@ window.PS = (function () {
   PS.banner = function (kind, icon, html) {
     return '<div class="banner ' + kind + '" role="status">' + PS.icon(icon) + '<div>' + html + '</div></div>';
   };
+
+  /* ---- data view (decision S4): 'real' = evidence only; 'synthetic' = gaps filled with labelled synthetic values ---- */
+  PS.setView = function (v) {
+    const raw = PS.raw, syn = raw && raw.synthetic;
+    if (v === 'synthetic' && syn) {
+      PS.data = Object.assign({}, raw, { suppliers: syn.suppliers, scenarios: syn.scenarios, modes: syn.modes, stress: syn.stress,
+        meta: Object.assign({}, raw.meta, { matrix_sha256: syn.matrix_sha256 }) });
+      PS.state.view = 'synthetic';
+    } else { PS.data = raw; PS.state.view = 'real'; }
+  };
+  PS.isSyn = function () { return PS.state.view === 'synthetic'; };
+  PS.hasSyn = function () { return !!(PS.raw && PS.raw.synthetic); };
+  PS.synTag = function (rid, text) {
+    return '<span class="syn-tag" data-tip="Synthetic value' + (rid ? ' (range ' + PS.esc(rid) + ')' : '') +
+      ': invented within an industry range because no public data exists. See Evidence and trust." tabindex="0">' + PS.icon('syn') + PS.esc(text || 'synthetic') + '</span>';
+  };
+  PS.priceBasis = function () { return PS.isSyn() ? 'at official US prices plus synthetic freight' : 'at official US prices'; };
 
   /* ---- marks ---- */
   /* a mark is "no data" when every supplier has the same value (e.g. billing: no supplier has its own invoices) */
@@ -78,7 +96,7 @@ window.PS = (function () {
     key = key === undefined ? s.outage : key;
     if (!key || key === 'none') return base;
     const r = PS.data.stress.results[key][PS.key(mode || s.mode, lam === undefined ? s.lam : lam, ent === undefined ? s.ent : ent)];
-    return Object.assign({}, base, { vials: r.vials, spot: r.spot, spend: r.spend, status: r.status, outage: key });
+    return Object.assign({}, base, { vials: r.vials, spot: r.spot, spend: r.spend, status: r.status, backup: r.backup, two_ok: r.two_ok, outage: key });
   };
   PS.outageLabel = function (o) {
     if (!o) return 'None';
@@ -164,7 +182,7 @@ window.PS = (function () {
     return fetch('data/snapshot.json', { cache: 'no-cache' }).then(function (r) {
       if (!r.ok) throw new Error('snapshot not found (' + r.status + ')');
       return r.json();
-    }).then(function (d) { PS.data = d; return d; });
+    }).then(function (d) { PS.raw = d; PS.data = d; return d; });
   };
   return PS;
 })();

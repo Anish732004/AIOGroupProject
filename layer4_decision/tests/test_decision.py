@@ -155,3 +155,15 @@ def test_disaster_changes_the_split_not_the_ranking():
     hit = engine.run(m, tiers, sku, "Normal", offline_factories={top})
     assert hit["ranking"]["S"].equals(base["ranking"]["S"])                      # quality unchanged
     assert hit["allocation"].groupby("factory_group")["vials"].sum()[top] == 0  # that factory ships nothing
+
+
+def test_tier1_two_supplier_minimum_and_warm_backup_share():
+    """Plan 4.2: Tier 1 needs at least 2 qualified makers; plan Q7: warm-backup share = order outside the primary factory."""
+    for path in (engine.MATRIX, engine.MATRIX_SYNTHETIC):
+        if not path.exists():
+            continue
+        m, tiers, sku = engine.load_inputs(path)
+        for mode in ("Normal", "Crisis", "Cost Focus"):
+            d = engine.run(m, tiers, sku, mode)["diagnostics"]
+            assert d["meets_two_supplier_minimum"]
+            assert d["warm_backup_share_pct"] == pytest.approx(100 - d["largest_factory_share_pct"], abs=0.01)

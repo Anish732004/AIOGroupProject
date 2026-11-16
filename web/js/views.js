@@ -23,8 +23,16 @@
     if (s.country_neutral) out.push(PS.badge('', 'Country: no data', 'nodata', 'The drug label does not say where it is made. Country-based marks use the middle value of the other suppliers.'));
     if (s.factory_neutral) out.push(PS.badge('', 'Factory: no data', 'nodata', 'The factory is not named on the label, so inspection and warning-letter terms use the middle value of the other suppliers.'));
     if (all && s.is_probation) out.push(PS.badge('', 'New supplier', 'new', 'Fewer than 5 past deliveries of its own on record. The plan gives a new supplier a capped trial share.'));
+    if (synEstablished(s)) out.push(PS.badge('syn', 'Established (synthetic)', 'syn', s.syn.past_deliveries + ' past deliveries to this buyer, ' + PS.pct(100 * s.syn.on_time_rate) + ' on time: synthetic values (ranges R10, R11).'));
     return out.length ? '<span class="flags">' + out.join('') + '</span>' : '';
   }
+
+  V.synBanner = function () {
+    return '<div style="margin-bottom:18px">' + PS.banner('syn', 'syn', '<strong>Synthetic view.</strong> Inputs with no public evidence are filled with values invented within industry ranges, each marked ' +
+      PS.synTag(null) + ': freight, delivery terms, past deliveries to this buyer, invoices, contracts, factory capacity and route share. FDA records, prices and country logistics scores stay real. ' +
+      '<a href="#/trust">See every value and its basis</a>. Choose <strong>Real data only</strong> in the side bar for the evidence-only result.') + '</div>';
+  };
+  function synEstablished(s) { return PS.isSyn() && s.syn && s.syn.established; }
 
   function rowFlags(s) { const f = flagBadges(s, false); return f ? '<div style="margin-top:6px">' + f + '</div>' : ''; }
 
@@ -49,7 +57,7 @@
     const countries = {};
     rows.forEach(function (r) { if (r.factory.country && r.factory.country !== 'Unknown') countries[r.factory.country] = 1; });
     return { unknownCountry: rows.some(function (r) { return r.factory.country === 'Unknown'; }), factories: rows.length, countries: Object.keys(countries).length,
-      largest: rows.length ? 100 * rows[0].vials / demand : 0, spot: sc.spot };
+      largest: rows.length ? 100 * rows[0].vials / demand : 0, spot: sc.spot, backup: sc.backup, two_ok: sc.two_ok };
   }
 
   /* =============================================================== OVERVIEW */
@@ -65,9 +73,9 @@
       '<h1>' + e(c.project.tagline) + '</h1>' +
       '<p>PharmaShield checks every approved supplier of a critical medicine on five risks, ranks them, and recommends how to split the monthly order across independent factories. A person approves every order.</p>' +
       '<div class="row"><a class="btn primary" href="#/split">See the recommended order</a><a class="btn" href="#/suppliers">Compare the suppliers</a></div></div>' +
-      '<div class="card"><h3>Recommended order this month</h3><p class="sub">' + PS.num(d.meta.demand) + ' vials · everyday (Normal) priorities</p>' +
+      '<div class="card"><h3>Recommended order this month</h3><p class="sub">' + PS.num(d.meta.demand) + ' vials · everyday (Normal) priorities' + (PS.isSyn() ? PS.synTag(null, 'synthetic view') : '') + '</p>' +
       '<div class="hero-figure">' + st.factories + ' factories</div>' +
-      '<p class="ink2" style="margin:4px 0 16px">in ' + st.countries + ' countries share the order. No factory carries more than ' + PS.pct(st.largest) + '.</p>' +
+      '<p class="ink2" style="margin:4px 0 16px">in ' + st.countries + ' countries' + (st.unknownCountry ? ' (plus one not stated)' : '') + ' share the order. No factory carries more than ' + PS.pct(st.largest) + ', so ' + PS.pct(st.backup) + ' is a warm backup.</p>' +
       splitList(sc, d.meta.demand) + '</div></div>' +
 
       (act.length ? '<div class="section">' + PS.banner('crit', 'alert', '<strong>Shortage alert.</strong> The FDA lists ' + act.length +
@@ -95,14 +103,16 @@
 
       '<section class="section"><h2>The five marks</h2><p class="sub">Every supplier gets five marks, each from 0 (best) to 1 (worst).</p><div class="grid g5">' +
       c.criteria.map(function (k) {
-        return '<div class="card crit-card"><span class="code">' + e(k.code) + '</span><h3>' + e(k.short) + '</h3><p>' + e(k.plain) + '</p><p class="how">' + e(k.method) + '</p></div>';
+        return '<div class="card crit-card"><span class="code">' + e(k.code) + '</span><h3>' + e(k.short) + '</h3><p>' + e(k.plain) + '</p><p class="how">' + e(PS.isSyn() && k.method_synthetic ? k.method_synthetic : k.method) + '</p></div>';
       }).join('') + '</div></section>' +
 
       '<section class="section"><h2>Why you can trust the numbers</h2><p class="sub">One rule: every input is backed by a cited source, or it is openly marked "no data" and given the same neutral value for every supplier.</p>' +
       '<div class="grid g4">' + ['real', 'standin', 'nodata', 'judgement'].map(function (k) {
         const lv = c.evidence_levels[k];
         return tile(lv.label, counts[k] || 0, e(lv.plain));
-      }).join('') + '</div><p style="margin-top:14px"><a class="btn" href="#/trust">See the evidence behind every input</a></p></section>';
+      }).join('') + '</div>' + (PS.hasSyn() ? '<p class="ink2" style="margin-top:12px">' + (PS.isSyn() ? 'You are in the synthetic view: the "no data" inputs above are filled with labelled synthetic values.' :
+        'A synthetic view, which fills the "no data" inputs with values invented within industry ranges, can be switched on in the side bar.') + '</p>' : '') +
+      '<p style="margin-top:14px"><a class="btn" href="#/trust">See the evidence behind every input</a></p></section>';
   };
 
   /* =============================================================== KEY FINDINGS (computed, never typed in) */
@@ -114,7 +124,8 @@
     // 1. where the order goes
     const rows = PS.splitByFactory(sc), countries = {};
     rows.forEach(function (r) { if (r.factory.country !== 'Unknown') countries[r.factory.country] = 1; });
-    out.push({ title: 'The order is spread over ' + rows.length + ' independent factories in ' + Object.keys(countries).length + ' countries',
+    const unknownC = rows.some(function (r) { return r.factory.country === 'Unknown'; });
+    out.push({ title: 'The order is spread over ' + rows.length + ' independent factories in ' + Object.keys(countries).length + ' countries' + (unknownC ? ', plus one whose country is not stated' : ''),
       text: rows.map(function (r) { return r.factory.label + ' (' + r.factory.country + ') ' + PS.pct(100 * r.vials / d.meta.demand); }).join(', ') +
         '. The largest share is ' + PS.pct(100 * rows[0].vials / d.meta.demand) +
         (d.modes.Normal.established_factories === 0 ? ': with no supplier holding a delivery record of its own, the plan caps every factory at ' + PS.pct(100 * d.modes.Normal.probation_cap) + '.' : '.'),
@@ -151,7 +162,7 @@
       const worstOn = crit.filter(function (c, j) { return vals[k][j] > 0 && vals[k][j] >= Math.max.apply(null, vals.map(function (v) { return v[j]; })); })
         .map(function (c) { return c.short.toLowerCase(); });
       out.push({ title: s.name + ' costs about ' + Math.round(s.price_usd / med) + ' times more',
-        text: money(s.price_usd) + ' per vial against ' + money(med) + ' for the ' + same + ' generic suppliers, which all share one official US price. ' +
+        text: money(s.price_usd) + ' per vial against ' + money(med) + (PS.isSyn() ? ' (median of the generic suppliers: one official US price plus synthetic freight). ' : ' for the ' + same + ' generic suppliers, which all share one official US price. ') +
           (worstOn.length ? 'It has the worst mark of all suppliers on ' + worstOn.join(' and ') + '. ' : '') +
           (ordered ? 'It receives an order in ' + ordered + ' of the ' + keys.length + ' situations a reader can set.' :
             'It receives no order in any of the ' + keys.length + ' situations a reader can set.'),
@@ -162,21 +173,22 @@
     const moved = cr.rank.filter(function (r, i) { return r !== sc.rank[i]; }).length;
     const topC = d.suppliers[cr.rank.indexOf(1)];
     out.push({ title: 'A Hormuz crisis changes the ranking' + (PS.sameSplit(cr, sc) ? ', not the order' : ' and the order'),
-      text: moved + ' of ' + d.suppliers.length + ' suppliers change rank and ' + topC.name + ' moves to first, because route exposure gains weight and cost loses it. ' +
+      text: moved + ' of ' + d.suppliers.length + ' suppliers change rank and ' + topC.name + (sc.rank[cr.rank.indexOf(1)] === 1 ? ' stays first' : ' moves to first') + ', because route exposure gains weight and cost loses it. ' +
         (PS.sameSplit(cr, sc) ? 'The recommended order stays the same, because it also weighs price and the share limits.' : 'The recommended order changes too.'),
       link: '#/split?mode=Crisis', cta: 'Try Crisis mode' });
 
     // 5b. natural disaster in the country with most factories
     const ctry = d.stress.outages.find(function (o) { return o.kind === 'country'; });
+    const singleOk = d.stress.outages.filter(function (o) { return o.kind === 'factory'; }).every(function (o) { return PS.stressed(o.key, 'Normal', 1, 0).spot < 0.5; });
     if (ctry) {
       const hit = PS.stressed(ctry.key, 'Normal', 1, 0), worst = d.stress.outages.find(function (o) { return o.kind === 'country_worst' && o.country === ctry.country; });
       const wr = worst ? PS.stressed(worst.key, 'Normal', 1, 0) : null, money = function (v) { return '$' + PS.num(v); };
-      out.push({ title: 'A disaster shutting every factory in ' + ctry.country + ' would ' + (hit.spot > 0.5 ? 'leave a supply gap' : 'not stop supply, but cost far more'),
+      out.push({ title: 'A disaster shutting every factory in ' + ctry.country + ' would ' + (hit.spot > 0.5 ? 'leave a supply gap' : hit.spend > sc.spend * 1.05 ? 'not stop supply, but cost far more' : 'be absorbed by the other factories'),
         text: ctry.groups.length + ' of the ' + d.meta.factories + ' factories are in ' + ctry.country + '. Without them ' +
           (hit.spot > 0.5 ? PS.num(hit.spot) + ' vials need an emergency purchase and ' : 'the order is still covered, but ') +
-          'the monthly cost rises from ' + money(sc.spend) + ' to ' + money(hit.spend) + ' at official US prices.' +
-          (wr ? ' If the supplier whose factory country is unknown is also there, ' + PS.num(wr.spot) + ' vials need an emergency purchase.' : '') +
-          ' Losing any single factory, by contrast, is fully absorbed.',
+          'the monthly cost ' + (hit.spend > sc.spend * 1.05 ? 'rises from ' + money(sc.spend) + ' to ' + money(hit.spend) : 'stays close to ' + money(sc.spend) + ' (' + money(hit.spend) + ')') + ' ' + PS.priceBasis() + '.' +
+          (wr ? ' If the supplier whose factory country is unknown is also there, ' + (wr.spot > 0.5 ? PS.num(wr.spot) + ' vials need an emergency purchase.' : 'the order is still covered.') : '') +
+          (singleOk ? ' Losing any single factory, by contrast, is fully absorbed.' : ''),
         link: '#/split?outage=' + encodeURIComponent(ctry.key), cta: 'Run the stress test' });
     }
 
@@ -189,6 +201,15 @@
         '). Shortages do not change a score here; they tell the buyer to confirm supply before ordering.', link: '#/alerts', cta: 'See the alerts' });
 
     // 7. what the evidence can and cannot say
+    if (PS.isSyn()) {
+      const est = d.suppliers.filter(function (x) { return !x.is_probation; }), lr = PS.raw.synthetic.incoterm_late_rates || {};
+      out.push({ title: 'In the synthetic view, invented inputs decide part of the result',
+        text: est.length + ' suppliers get a synthetic delivery record (' + est.map(function (x) { return x.name; }).join(', ') + '), so the plan lets an established factory take up to ' +
+          PS.pct(100 * d.modes.Normal.tier_cap) + ' and caps new ones at ' + PS.pct(100 * d.modes.Normal.probation_cap) + '. The drawn delivery term moves late-delivery risk most: in the real USAID data, ' +
+          Object.keys(lr).map(function (k) { return k + ' shipments were late ' + PS.pct(100 * lr[k]) + ' of the time'; }).join(', ') + '. Compare with Real data only before relying on any synthetic result.',
+        link: '#/trust', cta: 'See the synthetic values' });
+      return out;
+    }
     const tied = sc.S.filter(function (s) { return Math.abs(s - sc.S[sc.rank.indexOf(1)]) < 1e-6; }).length;
     out.push({ title: 'Many suppliers score alike, by design',
       text: 'Cost is 0 for ' + vals.filter(function (v) { return v[0] === 0; }).length + ' suppliers and billing has no data, so it is the same (0) for all ' + vals.length +
@@ -237,12 +258,15 @@
       '<tr class="group"><th colspan="3">Behind the marks</th></tr>' +
       row('Factory', '', A.factory, B.factory, function (v, x) { return txt(v && v.indexOf('(') !== 0 ? v + (x.factory_city ? ', ' + x.factory_city : '') : 'Not named on the label'); }) +
       row('Made in', '', A.country, B.country, function (v) { return txt(v === 'Unknown' ? 'Not stated' : v); }) +
-      row('Price per vial', 'official US price', A.price_usd, B.price_usd, function (v) { return '$' + PS.num(v, 2); }, true) +
+      row('Price per vial', PS.isSyn() ? 'official US price + synthetic freight' : 'official US price', A.price_usd, B.price_usd, function (v) { return '$' + PS.num(v, 2); }, true) +
+      row('Country logistics score', 'World Bank LPI, 1 to 5, higher is better', A.lpi, B.lpi, function (v) { return PS.num(v, 1); }, false) +
       row('Serious inspection findings', 'at its factory, 5 years', A.factory_neutral ? null : A.oai, B.factory_neutral ? null : B.oai, function (v) { return v === null ? 'No data' : n(v); }, true) +
       row('Minor inspection findings', 'at its factory, 5 years', A.factory_neutral ? null : A.vai, B.factory_neutral ? null : B.vai, function (v) { return v === null ? 'No data' : n(v); }, true) +
       row('Serious injectable recalls', 'by this seller, 5 years', A.recalls, B.recalls, n, true) +
       row('Warning letter to its factory', 'in our 50-letter sample', A.worst_letter, B.worst_letter, function (v) { return txt(v ? PS.words(v) : 'None found'); }) +
       row('Own delivery history', 'past shipments on record', A.own_shipments, B.own_shipments, n) +
+      (PS.isSyn() ? row('Past deliveries to this buyer', 'synthetic', A.syn.past_deliveries, B.syn.past_deliveries, function (v) { return n(v) + PS.synTag('R10'); }) +
+        row('Monthly vials its factory can give us', 'synthetic', A.syn.factory_capacity_vials, B.syn.factory_capacity_vials, function (v) { return n(v) + PS.synTag('R8'); }) : '') +
       row('Active FDA shortage', '', A.active_shortage, B.active_shortage, function (v) { return v ? PS.badge('crit', 'Yes', 'alert') : 'No'; }) +
       row('Share of 2025 US Medicaid volume', 'information only, not scored', A.medicaid_share_pct, B.medicaid_share_pct, function (v) { return v === null || v === undefined ? 'Not in the data' : PS.num(v, 1) + '%'; }) +
       '</tbody></table></div>' +
@@ -286,7 +310,12 @@
     }).join('');
     return head('Suppliers', 'Who can supply it, and how each one scores',
       d.meta.rankable + ' companies sell finished carboplatin vials. They are ranked for the situation chosen above. Select a row to see why a supplier scored as it did.') +
-      PS.banner('info', 'new', 'All ' + d.meta.rankable + ' are <strong>new suppliers</strong>: none has 5 or more past deliveries of its own on record. There is no billing data for any of them, so their billing mark is the same (0) for all, the plan\'s rule for new suppliers. It therefore has no effect on the ranking.') +
+      (function () {
+        const est = d.suppliers.filter(function (x) { return !x.is_probation; });
+        if (!est.length) return PS.banner('info', 'new', 'All ' + d.meta.rankable + ' are <strong>new suppliers</strong>: none has 5 or more past deliveries of its own on record. There is no billing data for any of them, so their billing mark is the same (0) for all, the plan\'s rule for new suppliers. It therefore has no effect on the ranking.');
+        return PS.banner('syn', 'syn', '<strong>' + est.length + ' established suppliers</strong> (' + est.map(function (x) { return e(x.name); }).join(', ') + ') have a synthetic delivery record with this buyer ' + PS.synTag('R10') +
+          '. Their billing mark comes from the billing model run on their synthetic invoices; the other ' + (d.suppliers.length - est.length) + ' are new suppliers and keep the plan\'s billing mark of 0.');
+      })() +
       '<div class="section table-wrap"><table><thead><tr><th>#</th><th>Supplier</th>' +
       '<th data-tip="How close the supplier is to an ideal one that is best on every mark. Higher is better." tabindex="0">Overall score<span class="hint">higher is better</span></th>' +
       crit.map(function (c) { return '<th data-tip="' + e(c.plain) + '" tabindex="0">' + e(c.short) + '<span class="hint">0 best · 1 worst</span></th>'; }).join('') +
@@ -316,7 +345,8 @@
       '<div class="grid g3">' +
       '<div class="card"><h3>Why this late-delivery mark (' + vals[i][1].toFixed(3) + ')</h3><p class="sub">The three things that moved the model\'s estimate most.</p>' + reasons +
       '<p class="small muted" style="margin-top:12px">' + e(sp.own_shipments > 0 ? sp.own_shipments + ' past shipment(s) of its own on record.' : 'No past shipments of its own on record.') + ' ' +
-      e(sp.shipment_profile ? 'Shipping details for UAE orders are unknown, so the estimate is averaged over ' + sp.shipment_profile + '.' : '') + '</p></div>' +
+      (PS.isSyn() && sp.syn ? 'Shipping details are synthetic (see below). ' + (sp.syn.past_deliveries ? sp.syn.past_deliveries + ' past deliveries to this buyer, ' + PS.pct(100 * sp.syn.on_time_rate) + ' on time' + PS.synTag('R10, R11') : 'No deliveries to this buyer yet.') :
+        e(sp.shipment_profile ? 'Shipping details for UAE orders are unknown, so the estimate is averaged over ' + sp.shipment_profile + '.' : '')) + '</p></div>' +
 
       '<div class="card"><h3>Compliance record (' + vals[i][3].toFixed(3) + ')</h3><p class="sub">Counted for the factory that makes this product.</p>' +
       '<dl class="kv"><dt>Factory</dt><dd>' + e(sp.factory && sp.factory.indexOf('(') !== 0 ? sp.factory : 'Not named on the label') + (sp.factory_city ? ', ' + e(sp.factory_city) : '') + '</dd>' +
@@ -324,7 +354,7 @@
       '<dt>Minor inspection findings, 5 yrs</dt><dd>' + (sp.factory_neutral ? 'No data (neutral)' : sp.vai) + '</dd>' +
       '<dt>Serious injectable recalls by this seller, 5 yrs</dt><dd>' + sp.recalls + '</dd>' +
       '<dt>Warning letter to this factory</dt><dd>' + e(PS.words(sp.worst_letter) || 'None in our 50-letter sample') + '</dd>' +
-      '<dt>Contract</dt><dd>Not scored</dd></dl>' +
+      '<dt>Contract</dt><dd>' + (PS.isSyn() && sp.syn ? 'Risk ' + sp.syn.contract_risk.toFixed(2) + ', counts 20%' + PS.synTag('R6', 'synthetic contract') : 'Not scored') + '</dd></dl>' +
       (sp.note ? '<div style="margin-top:12px">' + PS.banner('warn', 'warn', '<strong>Note, not scored.</strong> ' + e(sp.note.replace(/\s*Not scored.*$/, ''))) + '</div>' : '') + '</div>' +
 
       '<div class="card"><h3>Where it loses ground</h3><p class="sub">How the gap to an ideal supplier splits across the five marks.</p>' +
@@ -333,6 +363,11 @@
           { tip: PS.pct(100 * gaps[j]) + ' of this supplier\'s gap to the ideal comes from ' + c.short.toLowerCase() + '.' }) + '</div>';
       }).join('') + '</div>' : '<p class="ink2">This supplier is the best on every mark in this situation.</p>') + '</div></div>' +
 
+      '<div class="card section"><h3>Cost and route (' + vals[i][0].toFixed(2) + ' and ' + vals[i][4].toFixed(2) + ')</h3><p class="sub">What the cost and route-exposure marks are made of.</p><dl class="kv">' +
+      '<dt>Price per vial</dt><dd>$' + PS.num(sp.price_usd, 2) + (PS.isSyn() && sp.syn ? ' (official US price + $' + PS.num(sp.syn.freight_usd_per_vial, 2) + ' synthetic freight' + PS.synTag(sp.syn.freight_rate_range) + ')' : ' (official US price; freight has no data)') + '</dd>' +
+      '<dt>Country logistics score</dt><dd>' + PS.num(sp.lpi, 1) + ' of 5 (World Bank Logistics Performance Index' + (sp.country_neutral ? ', middle value of the others because the country is not stated' : ', ' + e(sp.country)) + ')</dd>' +
+      '<dt>Share of cargo exposed to Hormuz or Gulf airspace</dt><dd>' + (PS.isSyn() && sp.syn ? PS.num(sp.syn.hormuz_air_share, 2) + PS.synTag('R9') : PS.num(sp.hormuz, 2) + ' (UAE port volumes, the same for every origin)') + '</dd>' +
+      '<dt>Route exposure in Crisis mode</dt><dd>' + PS.num(sp.c5_crisis, 2) + ' (exposure stressed 1.5 times, capped at 1)</dd></dl></div>' +
       '<div class="card section"><h3>Evidence: where it is made</h3><p class="sub">Taken from the official drug label' + (ev.label_version ? ' (' + e(ev.label_version) + ')' : '') + '.</p>' +
       '<blockquote>' + e(ev.quote || 'No statement found.') + '</blockquote>' +
       '<p class="small ink2" style="margin-top:10px">' + e(ev.note || '') + '</p>' +
@@ -340,8 +375,24 @@
       ((ev.label_urls || []).length ? '<p class="small" style="margin-top:8px">' + ev.label_urls.map(function (u, n) {
         return '<a href="' + e(u) + '" target="_blank" rel="noopener">Open the label on DailyMed' + (ev.label_urls.length > 1 ? ' (' + (n + 1) + ')' : '') + '</a>';
       }).join(' · ') + '</p>' : '') +
-      (sp.medicaid_share_pct !== null && sp.medicaid_share_pct !== undefined ? '<p class="small muted" style="margin-top:8px">Information only, not scored: ' +
-        PS.num(sp.medicaid_share_pct, 1) + '% of 2025 US Medicaid carboplatin volume.</p>' : '') + '</div>';
+      (sp.medicaid_share_pct !== null && sp.medicaid_share_pct !== undefined ? '<p class="small muted" style="margin-top:8px">' + (PS.isSyn() ? 'Real data, used to scale the synthetic capacity and to pick the established suppliers: ' : 'Information only, not scored: ') +
+        PS.num(sp.medicaid_share_pct, 1) + '% of 2025 US Medicaid carboplatin volume.</p>' : '') + '</div>' +
+      (PS.isSyn() && sp.syn ? synCard(sp) : '');
+  }
+
+  function synCard(sp) {
+    const y = sp.syn, t = PS.synTag;
+    const row = function (k, v, rid) { return '<dt>' + e(k) + '</dt><dd>' + v + t(rid) + '</dd>'; };
+    return '<div class="card section"><h3>Synthetic inputs for this supplier</h3><p class="sub">Invented within the approved ranges (fixed seed), because no public data exists. Range ids refer to the table on Evidence &amp; trust.</p>' +
+      '<div class="grid g2"><dl class="kv">' +
+      row('Shipping', 'by ' + e(y.shipment_mode) + ', terms ' + e(y.vendor_inco_term), 'R1, R2') +
+      row('Typical shipment', PS.num(y.shipment_vials) + ' vials, ' + PS.num(y.shipment_weight_kg) + ' kg', 'R3, R4') +
+      row('Air freight', '$' + PS.num(y.freight_rate_usd_per_kg, 2) + ' per kg = $' + PS.num(y.freight_usd_per_vial, 2) + ' per vial', y.freight_rate_range) +
+      row('Share of cargo exposed to Hormuz or Gulf airspace', PS.num(y.hormuz_air_share, 2), 'R9') + '</dl><dl class="kv">' +
+      row('Monthly vials this factory can give us', PS.num(y.factory_capacity_vials), 'R8') +
+      row('Past deliveries to this buyer', y.past_deliveries ? y.past_deliveries + ' (' + PS.pct(100 * y.on_time_rate) + ' on time)' : '0 (new supplier)', 'R10, R11') +
+      row('Invoice error rate used to make its invoices', y.invoice_error_rate ? PS.pct(100 * y.invoice_error_rate, 1) : 'no invoices (new supplier)', 'R7') +
+      row('Contract risk (from its synthetic contract)', y.contract_risk.toFixed(2), 'R6') + '</dl></div></div>';
   }
 
   /* =============================================================== ORDER SPLIT */
@@ -372,6 +423,8 @@
           : '<strong>' + e(sp.name) + ' ranks first but receives no order</strong> because of the share limits.'));
       });
     }
+    if (mode.established_factories > 0) notes.push(PS.banner('syn', 'syn', mode.established_factories + ' factories have an established supplier (synthetic delivery records' + PS.synTag('R10') + '), so the plan lets each take up to ' + PS.pct(100 * mode.tier_cap) +
+      ' and caps each new supplier at ' + PS.pct(100 * mode.probation_cap) + ' (at least 5% if chosen). Each factory is also limited by the vials it can give us each month' + PS.synTag('R8') + '.'));
     if (mode.established_factories === 0) notes.push(PS.banner('', 'new', 'All suppliers are new, so the plan caps each <strong>factory</strong> at ' + PS.pct(100 * mode.probation_cap) + ' and a chosen supplier gets at least 5%. A supplier with its own delivery record could receive up to ' + PS.pct(100 * mode.tier_cap) + '.'));
 
     const changed = sc.w.some(function (w, j) { return Math.abs(w - d.modes.Normal.ahp[j]) > 1e-6; });
@@ -398,8 +451,11 @@
       'The split spreads ' + PS.num(d.meta.demand) + ' vials across independent factories, favouring higher-ranked suppliers while obeying the plan\'s share limits. Change the situation or the risk dial above to see it respond.') +
       stressPicker() +
       '<div class="stack">' + notes.join('') + '</div>' +
-      '<div class="section grid g4">' + tile('Factories in the order', st.factories) + tile('Countries', st.countries, st.unknownCountry ? 'plus one factory whose country is not stated' : '') +
-      tile('Largest single factory', PS.pct(st.largest)) + tile('Emergency purchase', PS.num(st.spot) + ' vials', 'outside the approved suppliers') + '</div>' +
+      '<div class="section grid g4">' + tile('Factories in the order', st.factories, st.two_ok ? 'meets the Tier 1 rule of at least 2 suppliers' : 'below the Tier 1 rule of at least 2 suppliers') +
+      tile('Countries', st.countries, st.unknownCountry ? 'plus one factory whose country is not stated' : '') +
+      '<div class="card tile" data-tip="Warm-backup share: the part of this month\'s order placed with factories other than the main one. That supply is already approved and shipping, so it can be scaled up at once if the main factory fails." tabindex="0"><span class="label">Warm-backup share</span><span class="value">' + PS.pct(st.backup) +
+        '</span><span class="hint">of the order is with factories other than the main one (largest single factory: ' + PS.pct(st.largest) + ')</span></div>' +
+      tile('Emergency purchase', PS.num(st.spot) + ' vials', 'outside the approved suppliers') + '</div>' +
       '<div class="section grid g-main"><div class="card"><h3>Recommended split, by factory</h3><p class="sub">Several names on the box can be one factory, so limits apply to the factory.</p>' + splitList(sc, d.meta.demand) + '</div>' +
       '<div class="card"><h3>What counts, and how much</h3><p class="sub">The weights behind the ranking in this situation.</p>' + weights +
       '<p class="small muted" style="margin-top:12px">Consistency check on the board\'s weights: ' + d.meta.ahp_consistency.CR + ' (must stay below 0.10).</p></div></div>' +
@@ -438,7 +494,7 @@
       (lost.length ? 'The recommended order loses ' + e(lost.join(', ')) + '. ' : 'None of these factories was in the recommended order. ') +
       (gained.length ? 'Taking over: ' + e(gained.join(', ')) + '. ' : '') +
       (hit.spot > 0.5 ? '<strong>' + PS.num(hit.spot) + ' vials cannot be supplied by any approved supplier</strong> and must be bought in an emergency. ' : 'The order is still fully covered by approved suppliers. ') +
-      cost + ', at official US prices (a stand-in for tender prices).';
+      cost + ', ' + PS.priceBasis() + ' (a stand-in for tender prices).';
     const worst = d.stress.outages.find(function (x) { return x.kind === 'country_worst' && x.country === o.country; });
     if (o.kind === 'country' && worst) {
       const wr = PS.stressed(worst.key), unk = worst.groups.filter(function (g) { return o.groups.indexOf(g) < 0; }).map(function (g) { return fac[g].names.join(', '); });
@@ -508,7 +564,8 @@
       }).join('') + '</tbody></table></div>' +
       '<p style="margin-top:10px"><button class="btn small-btn" type="button" id="letters-toggle">' + (showAll ? 'Show fewer' : 'Show all ' + d.letters.length + ' letters') + '</button></p></section>' +
 
-      '<section class="section"><h2>Contract reader</h2>' + PS.banner('warn', 'warn', '<strong>Demo only.</strong> The 11 contracts below were invented for testing, so their results are not part of any supplier\'s score.') +
+      '<section class="section"><h2>Contract reader</h2>' + (PS.isSyn() ? PS.banner('syn', 'syn', '<strong>Synthetic view: these contracts are scored.</strong> The 11 contracts were invented for testing; here their risk counts for 20% of the compliance mark' + PS.synTag('R6') + '. In the real view they are not scored.')
+        : PS.banner('warn', 'warn', '<strong>Demo only.</strong> The 11 contracts below were invented for testing, so their results are not part of any supplier\'s score.')) +
       '<div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Contract with</th><th>If Hormuz closes</th><th>Delivery promise</th><th>Late delivery</th><th>Locks the buyer in?</th></tr></thead><tbody>' +
       d.contracts.map(function (c) {
         return '<tr><td>' + e(c.supplier_name) + '</td><td>' + e(PSContract.plain(c.force_majeure)) + '</td><td class="nowrap">' + e(c.lead_time_days) + ' days</td><td>' + e(PSContract.plain(c.late_delivery_penalty)) + '</td><td>' +
@@ -548,11 +605,12 @@
       '<dt>False alarms</dt><dd>' + PS.num(cm.fp) + ' of ' + PS.num(ontime) + ' on-time shipments</dd><dt>Correctly left alone</dt><dd>' + PS.num(cm.tn) + '</dd></dl></div></div>' +
       '<div class="card" style="margin-top:16px"><h3>What the model relies on most</h3><p class="sub">Average pull on the prediction, across the test shipments.</p><div class="bars">' +
       imp.map(function (k) { return '<div class="bar-row"><div class="name">' + e(k[0]) + '</div>' + PS.barLine(k[1], imx, k[1].toFixed(2), { tip: k[0] + ': average pull ' + k[1].toFixed(3) }) + '</div>'; }).join('') + '</div>' +
-      '<p class="small muted" style="margin-top:12px">It learned from HIV-medicine shipments between 2006 and 2015, so it captures how shipping behaves in general, not cancer-medicine supply to the Gulf. Suppliers whose factories are in the same country, with no delivery history of their own, get the same mark.</p></div></section>' +
+      '<p class="small muted" style="margin-top:12px">It learned from HIV-medicine shipments between 2006 and 2015, so it captures how shipping behaves in general, not cancer-medicine supply to the Gulf. ' + (PS.isSyn() ? 'In the synthetic view each supplier gets its own synthetic shipping terms and delivery record, so the marks differ more.' : 'Suppliers whose factories are in the same country, with no delivery history of their own, get the same mark.') + '</p></div></section>' +
 
       '<section class="section"><h2>Billing-oddity model</h2><p class="sub">It looks at each invoice line\'s unit price, freight share and value, and flags the oddest 5% within each product group.</p>' +
       '<div class="grid g3">' + tile('Invoice lines checked', PS.num(m.c3.lines_scored), 'of ' + PS.num(m.c3.lines_total) + '; the rest have no freight figure') +
-      tile('Lines flagged', PS.num(m.c3.lines_flagged)) + tile('Used in today\'s ranking', '0', 'no ranked supplier has invoice history of its own') + '</div>' +
+      tile('Lines flagged', PS.num(m.c3.lines_flagged)) + (PS.isSyn() ? tile('Used in the synthetic view', PS.num(PS.raw.synthetic.summary.c3_invoice_lines) + PS.synTag('R7'), 'synthetic invoice lines of the established suppliers; ' + PS.raw.synthetic.summary.c3_injected_errors_caught + ' of ' + PS.raw.synthetic.summary.c3_injected_errors + ' planted errors caught') :
+        tile('Used in today\'s ranking', '0', 'no ranked supplier has invoice history of its own')) + '</div>' +
       '<h3 style="margin:18px 0 10px">Three flagged lines from the historical data</h3><div class="grid g3">' +
       m.c3.examples.map(function (x2) {
         return '<div class="card"><h3>' + e(x2.vendor) + '</h3><p class="sub">Product group ' + e(x2.product_group) + '</p><p class="ink2">' + e(x2.why_flagged) + '</p></div>';
@@ -560,6 +618,20 @@
   };
 
   /* =============================================================== EVIDENCE & TRUST */
+  function synSection() {
+    const y = PS.raw.synthetic, sm = y.summary;
+    return '<section class="section"><h2>The synthetic view: every invented value and its basis</h2><p class="sub">Asked for by the course professor for inputs with no public evidence. The real view never uses these. Each value is drawn once from its range with a fixed seed, so every run gives the same numbers; the models are not trained on them.</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>Range</th><th>What is invented</th><th>Applies to</th><th>Range used</th><th>Basis</th></tr></thead><tbody>' +
+      y.ranges.map(function (r) {
+        const dp = function (v) { return Number.isInteger(v) ? 0 : 2; };
+        const rng = r.low !== null && r.low !== undefined ? PS.num(r.low, dp(r.low)) + ' to ' + PS.num(r.high, dp(r.high)) + ' ' + PS.words(r.unit) : e(r.how_drawn);
+        const src = String(r.source || '').split(';').map(function (x) { x = x.trim(); return /^https?:/.test(x) ? '<a href="' + e(x) + '" target="_blank" rel="noopener">source</a>' : e(x); }).join(' · ');
+        return '<tr><td>' + PS.synTag(r.id, r.id) + '</td><td><strong>' + e(r.item) + '</strong></td><td>' + e(r.applies_to) + '</td><td>' + rng + '</td><td class="ink2">' + e(r.basis) + '<span class="cellsub">' + src + '</span></td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="ink2" style="margin-top:12px">Check on the billing model: ' + sm.c3_injected_errors + ' invoice errors were planted in ' + PS.num(sm.c3_invoice_lines) + ' synthetic invoice lines, and the model flagged ' +
+      sm.c3_injected_errors_caught + ' of them (' + sm.c3_flagged + ' lines flagged in total). The late-delivery model is unchanged (test score ' + sm.c2_model_test_roc_auc_unchanged.toFixed(3) + ').</p></section>';
+  }
+
   V.trust = function () {
     const d = PS.data, c = d.content, lv = c.evidence_levels, icon = { real: 'good', standin: 'warn', nodata: 'nodata', judgement: 'gear' };
     return head('Evidence & trust', 'What every number rests on',
@@ -568,13 +640,14 @@
         const n = c.evidence_ledger.filter(function (r) { return r.level === k; }).length;
         return '<div class="card tile"><span>' + PS.badge('level-' + k, lv[k].label, icon[k]) + '</span><span class="value">' + n + '</span><span class="hint">' + e(lv[k].plain) + '</span></div>';
       }).join('') + '</div>' +
-      '<section class="section"><h2>Every input, and its evidence</h2><div class="table-wrap"><table><thead><tr><th>Input</th><th>Feeds</th><th>Evidence</th><th>Source</th><th>What it means here</th></tr></thead><tbody>' +
+      '<section class="section"><h2>Every input, and its evidence</h2>' + (PS.isSyn() ? '<p class="sub">This table describes the real view. In the synthetic view, the "no data" rows are filled from the ranges in the next table.</p>' : '') + '<div class="table-wrap"><table><thead><tr><th>Input</th><th>Feeds</th><th>Evidence</th><th>Source</th><th>What it means here</th></tr></thead><tbody>' +
       c.evidence_ledger.map(function (r) {
         return '<tr><td><strong>' + e(r.input) + '</strong></td><td>' + e(r.feeds) + '</td><td>' + PS.badge('level-' + r.level, lv[r.level].label, icon[r.level]) + '</td><td>' + e(r.source) + '</td><td class="ink2">' + e(r.note) + '</td></tr>';
       }).join('') + '</tbody></table></div></section>' +
+      (PS.hasSyn() ? synSection() : '') +
       '<section class="section"><h2>Where this differs from the project plan, and why</h2><p class="sub">Every deliberate difference, so the plan, this site and the slides never silently disagree.</p>' +
-      '<div class="table-wrap"><table><thead><tr><th>The plan says</th><th>This prototype</th><th>Why</th></tr></thead><tbody>' +
-      c.plan_differences.map(function (r) { return '<tr><td>' + e(r.plan) + '</td><td><strong>' + e(r.here) + '</strong></td><td class="ink2">' + e(r.why) + '</td></tr>'; }).join('') +
+      '<div class="table-wrap"><table><thead><tr><th>The plan says</th><th>Real view</th><th>Synthetic view</th><th>Why</th></tr></thead><tbody>' +
+      c.plan_differences.map(function (r) { return '<tr><td>' + e(r.plan) + '</td><td><strong>' + e(r.here) + '</strong></td><td>' + e(r.synthetic) + '</td><td class="ink2">' + e(r.why) + '</td></tr>'; }).join('') +
       '</tbody></table></div></section>' +
       '<div class="section grid g2"><div class="card"><h3>Known limits</h3><p class="sub">What this prototype cannot claim.</p><ul class="ink2" style="margin:0;padding-left:18px">' +
       c.limits.map(function (l) { return '<li style="margin-bottom:8px">' + e(l) + '</li>'; }).join('') + '</ul></div>' +

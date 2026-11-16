@@ -7,7 +7,8 @@ Master Implementation Plan §4.2 (weights and modes), §4.4 (TOPSIS and linear p
 cd layer4_decision
 pip install -r requirements.txt
 python run_decision.py            # Normal, Crisis and Cost Focus modes; lambda 1.0, entropy share 0%
-python -m pytest -q               # 15 tests
+python run_decision.py --synthetic   # synthetic view (decision S4) -> outputs/synthetic/
+python -m pytest -q               # 16 tests
 ```
 
 The cockpit (`streamlit_app.py`, tab 3) runs the same engine live with the mode button and the λ and entropy sliders.
@@ -29,7 +30,11 @@ The cockpit (`streamlit_app.py`, tab 3) runs the same engine live with the mode 
 * Established factory: up to 70% (Tier 1). A factory whose makers are all on probation: up to 15% when at least 2
   established factories exist, otherwise 30% (plan §4.4).
 * A probation maker gets **0, or between 5% and its cap** (**L2**, a yes/no variable per maker).
-* Capacity has no public data, so every maker gets the same non-limiting capacity (= demand, decision item 3).
+* Orders are in **whole vials** (integer variables): a continuous solve left orders of 0.1 vial.
+* Every solve reports the **warm-backup share** (plan Q7: the order placed outside the main factory) and checks the
+  Tier 1 rule of **at least 2 suppliers** (plan §4.2).
+* Capacity applies **per factory** (names sharing a factory share it). In the real view it has no public data, so it is
+  non-limiting (= demand, decision item 3). The synthetic view uses 1,500–8,000 vials per factory (range R8).
 
 ## Results on the 15 Nov 2026 data
 
@@ -54,6 +59,19 @@ Read this honestly on the slides:
   factory. The tie between the names is broken alphabetically.
 * **Plan inconsistency, no effect today:** the tier table says "5–10% probation trial", while §4.4 says a 15% cap. The
   §4.4 values are used; with no established factory, both relax to 30%.
+
+## Synthetic view (decision S4)
+
+`python run_decision.py --synthetic` ranks and splits on `data/processed/suppliers_matrix_synthetic.csv`. Five suppliers
+have a synthetic delivery record, so caps become 70% (established) and 15% (new):
+
+| Mode | Split (vials) |
+|---|---|
+| Normal | Hospira 3,700 · Fresenius 3,300 · Gland 1,500 · Apotex (Teyro factory) 1,500 |
+| Crisis | Teva (Pharmachemie) 3,700 · Fresenius 3,300 · Gland 1,500 · Apotex 1,500 |
+| Cost Focus | same as Normal |
+
+Details and caveats: [synthetic/README.md](../synthetic/README.md).
 
 ## Natural-disaster stress test (decision S1)
 

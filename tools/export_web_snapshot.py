@@ -30,6 +30,8 @@ L1_REF = ROOT / "layer1_ingestion" / "reference"
 QUALITY = ROOT / "layer1_ingestion" / "data" / "quality" / "quality_report.json"
 L3 = ROOT / "layer3_engines" / "outputs"
 WEB = ROOT / "web"
+SYN_DIR = ROOT / "synthetic"
+SYN_MATRIX = ROOT / "data" / "processed" / "suppliers_matrix_synthetic.csv"
 LAMBDAS = [round(0.25 * i, 2) for i in range(13)]          # 0 .. 3 in steps of 0.25
 ENTROPY = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]                    # 0% .. 50%
 SOURCE_LABELS = {
@@ -76,14 +78,36 @@ def glossary(path: Path) -> list[dict]:
     return out
 
 
-def main() -> int:
-    m, tiers, sku = engine.load_inputs()
-    content = json.loads((WEB / "content" / "site_content.json").read_text())
-    quality = json.loads(QUALITY.read_text())
-    sites = pd.read_csv(L1_REF / "sku_manufacturing_sites.csv", dtype=str).set_index("labeler_key")
+def synthetic_block(tiers: pd.DataFrame, sku: pd.DataFrame, sites: pd.DataFrame, ids: list[str]) -> dict | None:
+    """Synthetic view (decision S4): same solves on data/processed/suppliers_matrix_synthetic.csv, plus every synthetic
+    value with the range it was drawn from. None if synthetic/build_synthetic.py has not been run."""
+    if not SYN_MATRIX.exists():
+        return None
+    ms = pd.read_csv(SYN_MATRIX)
+    b = solve_dataset(ms, tiers, sku, sites)
+    if b["ids"] != ids:
+        raise ValueError("synthetic view must rank the same suppliers as the real view")
+    inp = pd.read_csv(SYN_DIR / "outputs" / "synthetic_inputs.csv").set_index("manufacturer_id")
+    for sp in b["suppliers"]:
+        sp["syn"] = {k: clean(v) for k, v in inp.loc[sp["id"]].items()}
+    rng = pd.read_csv(SYN_DIR / "reference" / "synthetic_ranges.csv")
+    scms = pd.read_csv(INTERIM / "scms_shipments_clean.csv", usecols=["time_split", "vendor_inco_term", "late"], low_memory=False)
+    tr = scms[scms["time_split"] == "train"]
+    drawn = sorted(inp["vendor_inco_term"].unique())
+    late_by_term = {t: round(float(tr.loc[tr["vendor_inco_term"] == t, "late"].mean()), 3) for t in drawn}
+    return {
+        "incoterm_late_rates": late_by_term,
+        "matrix_sha256": hashlib.sha256(SYN_MATRIX.read_bytes()).hexdigest(),
+        "suppliers": b["suppliers"], "scenarios": b["scenarios"], "modes": b["modes"], "stress": b["stress"],
+        "ranges": records(rng, list(rng.columns)),
+        "summary": json.loads((SYN_DIR / "outputs" / "synthetic_summary.json").read_text()),
+    }
+
+
+def solve_dataset(m: pd.DataFrame, tiers: pd.DataFrame, sku: pd.DataFrame, sites: pd.DataFrame) -> dict:
+    """Suppliers, every scenario and every stress test for ONE score table (real or synthetic view)."""
     elig = m[m["eligible_for_ranking"].astype(bool)].sort_values("manufacturer_id").reset_index(drop=True)
     ids = elig["manufacturer_id"].tolist()
-
     # ---- suppliers ---------------------------------------------------------------------------------------
     suppliers = []
     for _, r in elig.iterrows():
@@ -98,12 +122,14 @@ def main() -> int:
             "is_probation": bool(r["is_probation"]), "country_neutral": bool(r.get("country_inputs_neutral", False)),
             "factory_neutral": bool(r.get("fda_inspection_record_neutral", False)),
             "active_shortage": bool(r["active_fda_shortage"]),
-            "marks": {c: clean(r[c]) for c in CRITERIA}, "c5_crisis": clean(r["C5_route_exposure_crisis"]),
+            "marks": {c: clean(r[c]) for c in CRITERIA}, "c5_crisis": clean(r["C5_route_exposure_crisis"]), "hormuz": clean(r["hormuz_air_share"]),
             "price_usd": clean(r["C1_landed_cost_usd_raw"]), "lpi": clean(r.get("lpi_score")),
             "oai": int(r["oai_count_5yr"]), "vai": int(r["vai_count_5yr"]),
             "recalls": int(r["recalls_class_i_ii_inj_5yr"]), "letters": int(r["warning_letters_5yr"]),
             "letter_severity": clean(r["nlp_warning_severity"]), "worst_letter": clean(r.get("worst_letter")),
             "note": clean(r.get("sister_plant_warning")), "own_shipments": int(r["scms_historical_shipments"]),
+            "buyer_deliveries": int(r.get("internal_historical_deliveries", 0) or 0),
+            "capacity": int(r["monthly_capacity_units"]),
             "medicaid_share_pct": clean(r.get("us_medicaid_2025_volume_share_pct")),
             "c2_basis": clean(r.get("c2_basis")), "shipment_profile": clean(r.get("shipment_profile")),
             "reasons": json.loads(r["shap_top3_reasons"]),
@@ -131,6 +157,8 @@ def main() -> int:
                     "cap_pct": [round(float(x), 1) for x in al["factory_cap_pct"]],
                     "spot": r["diagnostics"]["spot_buy_vials"], "status": r["diagnostics"]["solver_status"],
                     "spend": r["diagnostics"]["monthly_spend_usd"],
+                    "backup": r["diagnostics"]["warm_backup_share_pct"],
+                    "two_ok": r["diagnostics"]["meets_two_supplier_minimum"],
                 }
                 if mode not in modes:
                     modes[mode] = {
@@ -145,16 +173,7 @@ def main() -> int:
 
     # ---- stress test: natural disaster takes factories offline (plan Q7 "scenario stress-testing") ----------
     # A disaster changes what can ship, not a supplier's quality: rankings stay, only the order split re-solves.
-    fac = elig.groupby("source_plant_group").agg(country=("manufacturing_country", "first"),
-                                                 factory=("factory_name", "first")).reset_index()
-    india = sorted(fac.loc[fac["country"] == "India", "source_plant_group"])
-    unknown = sorted(fac.loc[fac["country"] == "Unknown", "source_plant_group"])
-    outages = [{"key": g, "groups": [g], "kind": "factory"} for g in sorted(fac["source_plant_group"])]
-    if india:
-        outages.append({"key": "COUNTRY_INDIA", "groups": india, "kind": "country", "country": "India"})
-        if unknown:   # worst case: factories whose country is unknown might also be in the affected country
-            outages.append({"key": "COUNTRY_INDIA_PLUS_UNKNOWN", "groups": india + unknown, "kind": "country_worst",
-                            "country": "India"})
+    outages = engine.stress_outages(m)
     stress = {}
     for o in outages:
         stress[o["key"]] = {}
@@ -165,7 +184,23 @@ def main() -> int:
                     al = r["allocation"].set_index("manufacturer_id").reindex(ids)
                     stress[o["key"]][f"{mode}|{lam:.2f}|{ent:.1f}"] = {
                         "vials": [round(float(x), 1) for x in al["vials"]], "spot": r["diagnostics"]["spot_buy_vials"],
-                        "spend": r["diagnostics"]["monthly_spend_usd"], "status": r["diagnostics"]["solver_status"]}
+                        "spend": r["diagnostics"]["monthly_spend_usd"], "status": r["diagnostics"]["solver_status"],
+                        "backup": r["diagnostics"]["warm_backup_share_pct"],
+                        "two_ok": r["diagnostics"]["meets_two_supplier_minimum"]}
+
+    return {"elig": elig, "ids": ids, "suppliers": suppliers, "excluded": excluded, "scenarios": scenarios,
+            "modes": modes, "ahp_check": ahp_check, "stress": {"outages": outages, "results": stress}}
+
+
+def main() -> int:
+    m, tiers, sku = engine.load_inputs()
+    content = json.loads((WEB / "content" / "site_content.json").read_text())
+    quality = json.loads(QUALITY.read_text())
+    sites = pd.read_csv(L1_REF / "sku_manufacturing_sites.csv", dtype=str).set_index("labeler_key")
+    real = solve_dataset(m, tiers, sku, sites)
+    elig, ids, suppliers, scenarios, modes = real["elig"], real["ids"], real["suppliers"], real["scenarios"], real["modes"]
+    excluded, ahp_check, stress, outages = real["excluded"], real["ahp_check"], real["stress"]["results"], real["stress"]["outages"]
+    synthetic = synthetic_block(tiers, sku, sites, ids)
 
     # ---- alerts, documents, models, sources --------------------------------------------------------------
     sh = pd.read_csv(INTERIM / "fda_shortages_sku.csv")
@@ -193,6 +228,7 @@ def main() -> int:
         "content": content, "supplier_ids": ids, "suppliers": suppliers, "excluded": excluded,
         "modes": modes, "scenarios": scenarios,
         "stress": {"outages": outages, "results": stress},
+        "synthetic": synthetic,
         "alerts": {
             "sku": records(sh, ["company_name", "status", "availability", "presentation", "shortage_reason",
                                 "update_date", "is_active"]),
@@ -230,8 +266,13 @@ def main() -> int:
     out.write_text(json.dumps(snapshot, separators=(",", ":"), default=clean))
     bad = [k for k, v in scenarios.items() if v["status"] != "Optimal"] + \
           [o + "|" + k for o, res in stress.items() for k, v in res.items() if v["status"] != "Optimal"]
+    if synthetic:
+        bad += ["syn|" + k for k, v in synthetic["scenarios"].items() if v["status"] != "Optimal"] + \
+               ["syn|" + o + "|" + k for o, res in synthetic["stress"]["results"].items() for k, v in res.items()
+                if v["status"] != "Optimal"]
     print(f"snapshot written: web/data/{out.name}  ({out.stat().st_size / 1024:.0f} KB) | suppliers {len(ids)} | "
-          f"scenarios {len(scenarios)} + stress tests {sum(len(v) for v in stress.values())} (not optimal: {len(bad)}) | "
+          f"scenarios {len(scenarios)} + stress tests {sum(len(v) for v in stress.values())}"
+          f"{' | synthetic view: same again' if synthetic else ' | synthetic view: not built'} (not optimal: {len(bad)}) | "
           f"glossary terms {len(snapshot['glossary'])}")
     return 1 if bad else 0
 

@@ -25,11 +25,11 @@ Optional:
 |---|---|---|---|
 | 1 | USAID SCMS Delivery History (10,324 lines) | file in `data/manual/scms/` (already included) | C2 XGBoost, C3 Isolation Forest |
 | 2 | openFDA NDC Directory | live API | SKU qualification gate |
-| 3 | openFDA Drug Shortages | live API (SKU + all current oncology) | dashboard alerts, C4 penalty |
+| 3 | openFDA Drug Shortages | live API (SKU + all current oncology) | dashboard alerts and badges (not scored; see plan differences) |
 | 4 | openFDA Drug Enforcement (recalls, 5 yrs) | live API, yearly windows | C4 recall component |
 | 5 | openFDA Drug Label (SPL text) | live API | plant country per labeler ("Manufactured by: … India") |
 | 6 | FDA Data Dashboard inspections (NAI/VAI/OAI) | **manual export** (one file) or API credentials. FDA retired the direct `InspectionsDataset.xlsx` link in Nov 2026 (404); the code still tries it in case it returns | C4 OAI/VAI component |
-| 7 | World Bank LPI + WGI Political Stability | live API | C5 route exposure |
+| 7 | World Bank LPI + WGI Political Stability | live API | C5 route exposure (LPI; WGI is shown, not scored) |
 | 8 | FDA CGMP warning letters + supplier contracts | saved files / URL list / optional crawl | C4 NLP (Member 4B) |
 | 9 | Scenario assumptions (corridor shares, CMS ASP price benchmark) | `reference/*.csv` | C1, C5 |
 

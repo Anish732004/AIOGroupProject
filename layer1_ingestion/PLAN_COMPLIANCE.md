@@ -1,6 +1,6 @@
 # Layer 1 vs. the Master Implementation Plan — line-by-line check
 
-Status key: ✅ implemented and tested · 🟡 implemented, needs a live run to confirm · ⬜ not a Layer 1 output (owner named)
+Status key: ✅ implemented, tested and confirmed by the live run of 15 Nov 2026 · ⬜ not a Layer 1 output (owner named)
 
 ## §5.1 Locked schema — `data/processed/suppliers_matrix.csv` (repository root)
 
@@ -34,7 +34,7 @@ The schema, with the plan's definitions and a pass / fail per column, is shown i
 | Plan reference | Requirement | Status | Where |
 |---|---|---|---|
 | §2 rubric, Q2 | "360° profile of one manufacturer fused across SCMS, FDA, World Bank & NLP" | ✅ | dashboard tab **360° manufacturer profile** |
-| §2 rubric, Q7 | Live openFDA shortage feed / alert banner | 🟡 | `fda_shortages_sku.csv`, banner on Overview |
+| §2 rubric, Q7 | Live openFDA shortage feed / alert banner | ✅ 35 carboplatin records (live run 15 Nov 2026) | `fda_shortages_sku.csv`, banner on the website and in Streamlit, live check button |
 | §3 item 2 | Report labelers, carboplatin shortage records and active oncology shortages | ✅ plan figure vs live figure | `plan_vs_live_reconciliation.csv` |
 | §3.1 | Feature-based inference rows for every Carboplatin maker: plant country, shipping-mode profile, freight parameters, site delay priors where available | ✅ | `panel_inference_features.csv` |
 | §3.1 | Probation badge: fewer than 5 historical deliveries | ✅ | `is_probation` |
@@ -52,20 +52,21 @@ The schema, with the plan's definitions and a pass / fail per column, is shown i
 
 Other layers: XGBoost + SHAP, Isolation Forest, warning-letter and contract readers (`layer3_engines/`); AHP, entropy,
 TOPSIS, PuLP and the disaster stress test (`layer4_decision/`); the showcase website (`web/`, Vercel) and the Streamlit
-operator tool (`streamlit_app.py`). Every deliberate difference from the plan, with its reason, is listed in
-`docs/DECISIONS.md` and on the website's Evidence & trust page.
+operator tool (`streamlit_app.py`); the synthetic view (`synthetic/`). Every plan item is traced in
+`docs/PLAN_TRACEABILITY.md`; every deliberate difference, with its reason, is in `docs/DECISIONS.md` and on the website's
+Evidence & trust page.
 
 ## §3.2 Dataset inventory
 
 | Plan dataset | Status | Where |
 |---|---|---|
 | USAID SCMS Delivery History | ✅ real file, 10,324 rows | `ingestion/scms.py` |
-| openFDA NDC Directory API | 🟡 | `ingestion/openfda.py` |
-| openFDA Drug Shortages API | 🟡 | `ingestion/openfda.py` |
-| openFDA Drug Enforcement API | 🟡 | `ingestion/openfda.py` |
+| openFDA NDC Directory API | ✅ 18 labelers (live run 15 Nov 2026) | `ingestion/openfda.py` |
+| openFDA Drug Shortages API | ✅ 35 records (live run 15 Nov 2026) | `ingestion/openfda.py` |
+| openFDA Drug Enforcement API | ✅ 4,961 recall records, 5 years (live run 15 Nov 2026) | `ingestion/openfda.py` |
 | FDA Data Dashboard Inspections (bulk) | ✅ manual export (the automatic link returned 404 on 15 Nov 2026), 9,262 drug inspections loaded | `ingestion/fda_inspections.py` |
-| FDA CGMP Warning Letters | 🟡 51 real letter URLs shipped | `data/manual/warning_letters/urls.csv` |
-| World Bank LPI & WGI | 🟡 | `ingestion/worldbank.py` |
+| FDA CGMP Warning Letters | ✅ 50 letters read (1 of the 51 URLs was a duplicate; live run 15 Nov 2026) | `data/manual/warning_letters/urls.csv` |
+| World Bank LPI & WGI | ✅ 217 countries (live run 15 Nov 2026) | `ingestion/worldbank.py` |
 | USAID GHSC-PSM (optional stretch) | ✅ optional loader; skipped if no file (first item in the plan's cut order) | `ingestion/optional_sources.py` |
 | Supplier MSAs (synthetic) | ✅ 11 shipped | `data/manual/contracts/` |
 | Internal GPO ERP / delivery logs / Tatmeen scans (§2) | ✅ optional loader; SCMS is the proxy per §3 | `ingestion/optional_sources.py` |
@@ -80,7 +81,7 @@ operator tool (`streamlit_app.py`). Every deliberate difference from the plan, w
 | 1 | `late = delivered > scheduled` | ✅ |
 | 1 | Print shape and class balance at every step | ✅ 8 `STEP` lines, also in the quality report |
 | 2 | On-time rate, mean and p90 delay, freight-to-value ratio, unit price variance, air share per site; corridor features | ✅ train period only |
-| 3 | Live openFDA NDC + Shortages for Carboplatin Injection labelers | 🟡 |
+| 3 | Live openFDA NDC + Shortages for Carboplatin Injection labelers | ✅ 18 labelers, 35 shortage records |
 | 3 | Normalise corporate suffixes; `rapidfuzz token_sort_ratio ≥ 88` + manual check | ✅ candidates file flags every non-exact link |
 | 3 | Link to inspections, recalls, World Bank LPI/WGI | ✅ |
 | 4 | Chronological split: train ≤ 2013, test 2014–2015 | ✅ `time_split` (7,771 / 2,545) |

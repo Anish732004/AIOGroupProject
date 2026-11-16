@@ -8,6 +8,7 @@ Consistency check: the project plan, the pipeline (backend) and the website (fro
   B. Backend -> site  -> web/data/snapshot.json shows exactly what the pipeline computed
   C. Site text        -> every number written in the site's text matches the data
   D. Documented       -> every deliberate difference from the plan is listed on the site and in docs/DECISIONS.md
+  E. Synthetic view   -> every synthetic value inside its approved range; the site's synthetic view equals Layer 4
 """
 from __future__ import annotations
 
@@ -129,10 +130,82 @@ def main() -> int:
     # ------------------------------------------------------------------ D. documented differences
     dec = (ROOT / "docs/DECISIONS.md").read_text()
     topics = {"entropy": "L5", "contract": "| 7 |", "capacity": "| 3 |", "per factory": "L3", "Hormuz": "| 5 |",
-              "Cost": "| 4 |", "probation": "| 9 |"}
-    diffs = " ".join(d["plan"] + d["here"] for d in content.get("plan_differences", []))
+              "Cost": "| 4 |", "probation": "| 9 |", "synthetic": "S4"}
+    diffs = " ".join(d["plan"] + " " + d["here"] + " " + d.get("synthetic", "") for d in content.get("plan_differences", []))
     for word, key in topics.items():
         check(f"D1 difference about '{word}' is on the site and in DECISIONS.md", word.lower() in diffs.lower() and key in dec)
+
+    # ------------------------------------------------------------------ E. synthetic view (decision S4)
+    syn = snap.get("synthetic")
+    sm_path = ROOT / "data/processed/suppliers_matrix_synthetic.csv"
+    check("E1 synthetic view is on the site and built from the current synthetic table",
+          syn is not None and sm_path.exists()
+          and syn["matrix_sha256"] == __import__("hashlib").sha256(sm_path.read_bytes()).hexdigest())
+    if syn is not None and sm_path.exists():
+        ms = pd.read_csv(sm_path)
+        check("E2 synthetic table keeps the locked schema and the same 11 ranked suppliers",
+              list(ms.columns[:16]) == locked
+              and sorted(ms.loc[ms["eligible_for_ranking"].astype(bool), "manufacturer_id"]) == ids)
+        rng = pd.read_csv(ROOT / "synthetic/reference/synthetic_ranges.csv").set_index("id")
+        inp = pd.read_csv(ROOT / "synthetic/outputs/synthetic_inputs.csv")
+        inside = lambda col, rid: inp[col].dropna().between(rng.at[rid, "low"], rng.at[rid, "high"]).all()
+        check("E3 every synthetic value is inside its approved range (R3, R4, R7-R11)",
+              all(inside(c, r) for c, r in [("kg_per_vial", "R3"), ("shipment_vials", "R4"), ("invoice_error_rate", "R7"),
+                                            ("factory_capacity_vials", "R8"), ("hormuz_air_share", "R9")])
+              and inp.loc[inp["established"], "past_deliveries"].between(rng.at["R10", "low"], rng.at["R10", "high"]).all()
+              and inp.loc[inp["established"], "on_time_rate"].between(rng.at["R11", "low"], rng.at["R11", "high"]).all())
+        check("E4 the ranges table on the site equals synthetic/reference/synthetic_ranges.csv",
+              [r["id"] for r in syn["ranges"]] == list(rng.index))
+        for mode in snap["meta"]["modes"]:
+            r = engine.run(ms, tiers, sku, mode, 1.0, 0.0)
+            sc = syn["scenarios"][f"{mode}|1.00|0.0"]
+            check(f"E5 synthetic {mode}: site ranks and split equal Layer 4",
+                  sc["rank"] == r["ranking"].reindex(ids)["rank"].astype(int).tolist()
+                  and np.allclose(sc["vials"], r["allocation"].set_index("manufacturer_id").reindex(ids)["vials"], atol=0.11))
+        lo = float(e["C1_landed_cost_usd_raw"].min())
+        check("E6 the new cost formula (% above the cheapest, capped at 1) gives the plan's result on real data",
+              np.allclose(np.minimum(1, (e["C1_landed_cost_usd_raw"] - lo) / lo), e["C1_landed_cost"], atol=1e-4))
+        out_syn = pd.read_csv(ROOT / "layer4_decision/outputs/synthetic/allocation_normal.csv").set_index("manufacturer_id").reindex(ids)
+        check("E7 site synthetic Normal split equals layer4_decision/outputs/synthetic",
+              np.allclose(syn["scenarios"]["Normal|1.00|0.0"]["vials"], out_syn["vials"], atol=0.11))
+
+    # ------------------------------------------------------------------ F. plan KPIs and documents (decision S5)
+    rn = engine.run(m, tiers, sku, "Normal", 1.0, 0.0)["diagnostics"]
+    check("F1 warm-backup share on the site equals Layer 4 (plan Q7)",
+          abs(snap["scenarios"]["Normal|1.00|0.0"]["backup"] - rn["warm_backup_share_pct"]) < 0.01)
+    views = [snap] + ([snap["synthetic"]] if snap.get("synthetic") else [])
+    allsc = [v for vw in views for v in vw["scenarios"].values()] + \
+            [v for vw in views for res in vw["stress"]["results"].values() for v in res.values() if v["spot"] < 0.5]
+    check("F2 every scenario and covered stress test meets the Tier 1 two-supplier rule (plan 4.2)",
+          all(v["two_ok"] for v in allsc), f"{sum(not v['two_ok'] for v in allsc)} fail")
+    check("F3 every order is in whole vials", all(float(x).is_integer() for v in allsc for x in v["vials"]))
+    qa = (ROOT / "docs/QA_DEFENSE.md").read_text()
+    india = next(o for o in engine.stress_outages(m) if o["kind"] == "country")
+    worst = next(o for o in engine.stress_outages(m) if o["kind"] == "country_worst")
+    ri = engine.run(m, tiers, sku, "Normal", 1.0, 0.0, set(india["groups"]))["diagnostics"]
+    rw = engine.run(m, tiers, sku, "Normal", 1.0, 0.0, set(worst["groups"]))["diagnostics"]
+    from decimal import ROUND_HALF_UP, Decimal
+    money = lambda v: "$" + f"{int(Decimal(str(v)).quantize(Decimal('1'), rounding=ROUND_HALF_UP)):,}"
+    fac_split = engine.run(m, tiers, sku)["allocation"].groupby("factory_group")["vials"].sum()
+    split = "/".join(str(round(v / 100)) for v in sorted(fac_split[fac_split > 0.5], reverse=True))
+    qa_facts = [money(rn["monthly_spend_usd"]), money(ri["monthly_spend_usd"]), money(rw["monthly_spend_usd"]), split,
+                f"{c2['train_rows']:,} shipments", f"{c2['test_rows']:,} later", f"{c2['xgboost_test']['recall_late']:.0%}",
+                f"there are {e['C2_delivery_risk'].nunique()} different late-delivery scores",
+                f"warm-backup share of {rn['warm_backup_share_pct']:.0f}%"]
+    missing = [f for f in qa_facts if f not in qa.replace("\n", " ")]
+    check("F4 every number in docs/QA_DEFENSE.md matches the data", not missing, f"missing: {missing}")
+    tr = (ROOT / "docs/PLAN_TRACEABILITY.md").read_text()
+    check("F5 docs/PLAN_TRACEABILITY.md covers every plan section (1-6)", all(f"## §{k}" in tr for k in range(1, 7)))
+    pdf = ROOT / "docs/GenAI_Prompt_Log.pdf"
+    logs = [ROOT / "docs" / f for f in ("GENAI_PROMPT_LOG_layer1.md", "GENAI_PROMPT_LOG_layer2_3.md", "GENAI_PROMPT_LOG_layer4_5.md")]
+    check("F6 the GenAI Prompt Log PDF is newer than its three markdown logs", pdf.exists() and all(pdf.stat().st_mtime >= x.stat().st_mtime for x in logs))
+    nb3 = json.loads((ROOT / "notebooks/03_layer4_decision.ipynb").read_text())
+    check("F7 notebooks run with no errors and no unrun cells (plan step 10)", all(
+        not any(o.get("output_type") == "error" for c in nb["cells"] for o in c.get("outputs", []))
+        and all(c.get("execution_count") for c in nb["cells"] if c["cell_type"] == "code")
+        for nb in [json.loads((ROOT / f"notebooks/{n}.ipynb").read_text()) for n in
+                   ("01_layer1_data_ingestion", "02_layer3_risk_engines", "03_layer4_decision")]))
+    check("F8 notebook 03 ends with the numbers for the slides", "Numbers for the slides" in json.dumps(nb3))
 
     width = max(len(n) for n, _, _ in results)
     for n, ok, d in results:

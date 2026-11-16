@@ -1,0 +1,29 @@
+# GenAI Prompt Log — Layer 4 (decision engine), Layer 5 (cockpit and website), stress test and synthetic view
+
+Plan §6.1 disclosure protocol. Tool: Claude Code (Anthropic; Claude Opus 5.5 and Claude Sonnet 5.5), 15–16 November 2026.
+Everything under `layer4_decision/`, `synthetic/`, `web/`, `tools/`, `streamlit_app.py`, `app/` and
+`notebooks/03_layer4_decision.ipynb` is GenAI-generated and should carry the red dashed outline on slides.
+Prompts are verbatim. Earlier layers: [GENAI_PROMPT_LOG_layer1.md](GENAI_PROMPT_LOG_layer1.md) and
+[GENAI_PROMPT_LOG_layer2_3.md](GENAI_PROMPT_LOG_layer2_3.md).
+
+| # | Prompt (verbatim) | What was generated |
+|---|---|---|
+| 1 | "identify whatever problems you have at this point, list them, solve them and in the same way, with not errors at all, build layer 4 and 5. and don't make assumptions ask me..." (+ answers in the chat: risk dial λ default 1, 5% minimum only if chosen, caps per factory, four-tab cockpit plus a data-pipeline tab, board weights with the entropy slider at 0%) | `layer4_decision/` (AHP tier weights with consistency check, entropy weights, zero-guarded TOPSIS, PuLP order split solved with HiGHS, tests, notebook 03), `streamlit_app.py` cockpit, `app/pipeline_console.py`, `app/audit.py` (hash-chained approval log) |
+| 2 | "also, the frontend is not streamlit, i would like to make it in vercel. the mvp should be showcased in the best possible manner, easily navigatable, visually good, insightful and easily understandable to the end reader" (+ answers: approvals stored in the browser; keep Streamlit locally) | `web/` static site, `vercel.json` (security policy), `.vercelignore`, `tools/export_web_snapshot.py`, `tools/test_web.mjs`, `tools/serve_web.mjs`, `tools/e2e_web.mjs`; Layer 4 tie-break fix (decision L6) |
+| 3 | "but the dashboard on the vercel would be presentable right? it would have all the insights??" / "yes" | Key findings computed from the data, Compare page |
+| 4 | "add only the natural disaster thing. do stress test. and check thoroughly and make sure the frontend, backend and the plan don't contradict each other in any way.. do we need to change the whole pipeline again? based on whatever you told me?" | Layer 4 `offline_factories` and a robust two-stage tie-break; stress test on the website (any factory, every factory in India, worst case); `tools/check_consistency.py`; plan-differences table on the Evidence & trust page; stale documents corrected (decisions S1, S2) |
+| 5 | "any more mistakes that are there in the entire project?" | Decisions log rows marked as superseded or fixed; Layer 4 test count corrected |
+| 6 | "why are we using the fda data? since our target is UAE, can you use regulations according to that? basically replace fda with its uae counterpart." / "the site is not opening. try EDE" | Research only: the EDE Drug Directory lists 3 carboplatin products (Kelix Bio, Korea United Pharm), none from the 11 ranked suppliers; EDE publishes no inspections, warning letters or shortage list. Team decision: keep the FDA data and the US price; no code changed |
+| 7 | "since all the suppliers are on probation, then how we saying that they produce carboplation? there is no data for billing oddities." | Billing oddities labelled "no data · no effect" on the site (decision S3); proof that removing its weight changes nothing; consistency check C9 |
+| 8 | "i consulted my professor and he told to include synthetic data for parts there is no evidence. if i do so, would i need to retrain the entire model?" / "1. all of the rows 2. you propose realistic ranges based on industry reports. 3. yes" / "all as recommended.. also i think the Gen ai prompt log is remaining after layer 3." | `synthetic/` (approved ranges R1–R11 with sources, `build_synthetic.py`, 9 tests), `data/processed/suppliers_matrix_synthetic.csv`, `layer4_decision/outputs/synthetic/`, per-factory capacity in the order split, "Real data only / With synthetic data" switch on the website, consistency checks E1–E7, this log (decision S4) |
+| 9 | "is the project complete? can i go towards making ppt? just asking? are you sure? are you really sure? have we done all from our implementation plan and everything in a proper well-defined and logical manner?" / "yes close all the gaps on your side. before check if anyone more gaps are there. as it should nt happen that everytime i am asking you and you are giving new gaps. also, while resolving the identified gaps, make sure they are resolved completely. no loose ends." (+ answer: approve the open technical choices as they are) | Full audit against all 13 plan pages; `docs/PLAN_TRACEABILITY.md`; warm-backup share KPI and Tier 1 two-supplier check; whole-vial order split; World Bank score on the website; stress test and synthetic view in Streamlit; 7 more plan-differences rows and a synthetic-view column; notebooks 01–03 run (03 extended with the stress test, synthetic view and slide numbers); `docs/GenAI_Prompt_Log.pdf` and `tools/build_prompt_log_pdf.py`; `docs/QA_DEFENSE.md`; consistency checks F1–F8; stale statements corrected in Layer 1 docs (decision S5) |
+
+## What is and is not AI-generated data
+
+* **AI-proposed, approved by the team lead, marked "synthetic" everywhere:** every value in
+  `synthetic/outputs/synthetic_inputs.csv` and `synthetic_invoice_lines.csv`. The ranges they are drawn from, with the
+  industry report or real data behind each one, are in `synthetic/reference/synthetic_ranges.csv`. The real view never
+  uses them, and no model is trained on them.
+* **Computed by code from real data:** rankings, order splits and stress-test results in the real view
+  (`layer4_decision/outputs/`, `web/data/snapshot.json`).
+* **Research by AI, cited:** the UAE (EDE) registration check in prompt 6, kept in the chat and the decisions log only.

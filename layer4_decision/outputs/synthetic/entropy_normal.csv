@@ -1,0 +1,6 @@
+criterion,varies_across_makers,entropy,divergence
+C1_landed_cost,True,0.9603,0.0397
+C2_delivery_risk,True,0.9445,0.0555
+C3_price_integrity,True,0.9328,0.0672
+C4_compliance_risk,True,0.9356,0.0644
+C5_route_exposure,True,0.6501,0.3499

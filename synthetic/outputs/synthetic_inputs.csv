@@ -1,0 +1,12 @@
+manufacturer_id,factory_group,country,established,us_market_share_pct,shipment_mode,vendor_inco_term,shipment_vials,kg_per_vial,shipment_weight_kg,freight_rate_usd_per_kg,freight_rate_range,freight_usd_per_vial,freight_to_value_ratio,hormuz_air_share,factory_capacity_vials,capacity_basis,past_deliveries,late_deliveries,on_time_rate,invoice_error_rate,contract_risk
+ACCORD HEALTHCARE,INTAS_PHARMEZ_AHMEDABAD,India,True,9.4,Air,DDP,1733,0.1253,217.1,3.328,R5a,0.417,0.014917,0.9758,3100,scaled by real US market share 9.4% (+/-10%),24,4,0.8489,0.0211,0.0625
+APOTEX,TEYRO_ORAGADAM,India,False,1.7,Air,EXW,2592,0.1018,263.9,2.967,R5a,0.302,0.010803,0.9154,1900,scaled by real US market share 1.7% (+/-10%),0,0,,,0.5
+AVYXA PHARMA,AVYXA_SWITZERLAND,Switzerland,False,0.0,Air,EXW,1379,0.1176,162.2,3.497,R5b,0.4112,0.000175,0.9859,3200,no US Medicaid sales: uniform 1500-4000,0,0,,,0.75
+BPI LABS,GLAND_VISAKHAPATNAM,India,False,0.0,Air,EXW,1660,0.1371,227.6,2.871,R5a,0.3936,0.01408,0.9644,3600,no US Medicaid sales: uniform 1500-4000,0,0,,,0.4375
+EUGIA US,EUGIA_UNIT1_KOLTHUR,India,True,16.3,Air,DDP,1454,0.139,202.1,2.594,R5a,0.3606,0.012899,0.9761,4700,scaled by real US market share 16.3% (+/-10%),23,2,0.9249,0.031,0.9375
+FRESENIUS KABI USA,FRESENIUS_UNKNOWN,Unknown,True,10.4,Air,EXW,1874,0.1051,197.0,3.328,median of known factories,0.3498,0.012513,0.9758,3300,scaled by real US market share 10.4% (+/-10%),20,2,0.9207,0.0216,0.125
+GLAND PHARMA,GLAND_VISAKHAPATNAM,India,False,0.0,Air,EXW,2665,0.1371,365.4,2.871,R5a,0.3936,0.01408,0.9644,3600,no US Medicaid sales: uniform 1500-4000,0,0,,,0.0625
+HOSPIRA,HOSPIRA_AUSTRALIA,Australia,True,36.3,Air,DDP,2274,0.1091,248.1,4.165,R5c,0.4544,0.016255,0.9555,7300,scaled by real US market share 36.3% (+/-10%),8,1,0.83,0.0102,0.375
+NATCO PHARMA USA,TEYRO_ORAGADAM,India,False,0.0,Air,DDP,2561,0.1018,260.7,2.967,R5a,0.302,0.010803,0.9154,1900,scaled by real US market share 1.7% (+/-10%),0,0,,,0.5625
+TEVA PARENTERAL MEDICINES,PHARMACHEMIE_HAARLEM,Netherlands,True,21.6,Air,DDP,2330,0.1357,316.2,3.674,R5b,0.4986,0.017836,0.9778,5000,scaled by real US market share 21.6% (+/-10%),11,1,0.8688,0.0271,0.375
+TEYRO LABS,TEYRO_ORAGADAM,India,False,0.0,Air,EXW,2562,0.1018,260.8,2.967,R5a,0.302,0.010803,0.9154,1900,scaled by real US market share 1.7% (+/-10%),0,0,,,0.75
