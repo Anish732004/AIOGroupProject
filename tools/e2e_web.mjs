@@ -128,6 +128,8 @@ check('synthetic view has established suppliers and the 70% / 15% caps', await e
 check('synthetic values are marked on the page', await ev('document.querySelectorAll(".syn-tag").length > 2'));
 await go('#/suppliers?supplier=HOSPIRA');
 check('supplier detail lists its synthetic inputs', (await ev('document.getElementById("detail").textContent')).includes('Synthetic inputs for this supplier'));
+await go('#/models');
+check('Models page explains why test scores are identical and shows the per-supplier effect of synthetic inputs', (await ev('document.getElementById("view").textContent')).includes('same in both views, on purpose') && (await ev('document.querySelectorAll("#view table tbody tr").length')) >= 11);
 await go('#/documents');
 check('in the synthetic view the contracts banner says they are scored', (await ev('document.getElementById("view").textContent')).includes('these contracts are scored'));
 await go('#/trust');

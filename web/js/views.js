@@ -584,6 +584,21 @@
   };
 
   /* =============================================================== MODELS */
+  /* late-delivery mark per supplier in each view: the model is the same, the inputs differ */
+  function delivery_by_supplier() {
+    const real = PS.raw.suppliers, syn = PS.raw.synthetic.suppliers;
+    const rows = real.map(function (r, i) {
+      const y = syn[i], a = r.marks.C2_delivery_risk, b = y.marks.C2_delivery_risk, d = b - a;
+      const cur = PS.isSyn() ? y : r, top = cur.reasons && cur.reasons[0];
+      return '<tr><td><strong>' + e(r.name) + '</strong></td><td class="num">' + a.toFixed(3) + '</td><td class="num">' + b.toFixed(3) + '</td>' +
+        '<td class="num">' + (Math.abs(d) < 0.0005 ? 'same' : (d > 0 ? '+' : '') + d.toFixed(3)) + '</td>' +
+        '<td class="ink2">' + (top ? e(top.feature + ': ' + top.value) : '') + '</td></tr>';
+    }).join('');
+    return '<div class="card" style="margin-top:16px"><h3>What the model predicts for each supplier, in both views</h3>' +
+      '<p class="sub">Late-delivery mark, 0 best to 1 worst. Same model, different inputs: the real view averages over real shipments from the factory\'s country; the synthetic view uses each supplier\'s own synthetic shipping terms and delivery record ' + PS.synTag('R1-R4, R10, R11') + '.</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>Supplier</th><th>Real view</th><th>Synthetic view</th><th>Change</th><th>Biggest driver in the view you are looking at</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
+  }
+
   V.models = function () {
     const m = PS.data.models, x = m.c2.xgboost_test, b = m.c2.logistic_regression_test;
     const metrics = [['Overall quality', 'roc_auc', '0.5 is guessing, 1.0 is perfect'], ['Late shipments caught', 'recall_late', 'share of truly late shipments that were flagged'],
@@ -592,7 +607,7 @@
     const cm = x.confusion_matrix, late = cm.tp + cm.fn, ontime = cm.tn + cm.fp;
     return head('Models', 'How good are the predictions?',
       'Two models do the predicting. Both are tested the honest way: on data they were not allowed to see while learning.') +
-      '<section class="section"><h2>Late-delivery model</h2><p class="sub">It learned from ' + PS.num(m.c2.train_rows) + ' shipments up to 2013 and was tested on ' + PS.num(m.c2.test_rows) +
+      '<section class="section"><h2>Late-delivery model</h2>' + (PS.hasSyn() ? PS.banner('info', 'info', '<strong>The scores below are the same in both views, on purpose.</strong> The model is trained and tested only on real shipments (2006 to 2015); the synthetic view never trains it. What the synthetic view changes is the <em>input</em>: each supplier\'s own shipping terms and delivery record. Its effect on each supplier\'s late-delivery mark is in the table at the end of this section.') : '') + '<p class="sub">It learned from ' + PS.num(m.c2.train_rows) + ' shipments up to 2013 and was tested on ' + PS.num(m.c2.test_rows) +
       ' later shipments (2014 to 2015), of which ' + PS.pct(100 * m.c2.test_late_rate) + ' were late.</p>' +
       '<div class="grid g-main"><div class="card"><h3>Against a simple baseline</h3><p class="sub">A complex model must beat a simple one to earn its place.</p>' +
       '<div class="legend"><span><span class="sw"></span>XGBoost (used)</span><span><span class="sw context"></span>Simple baseline (logistic regression)</span></div><div class="bars">' +
@@ -606,7 +621,8 @@
       '<dt>False alarms</dt><dd>' + PS.num(cm.fp) + ' of ' + PS.num(ontime) + ' on-time shipments</dd><dt>Correctly left alone</dt><dd>' + PS.num(cm.tn) + '</dd></dl></div></div>' +
       '<div class="card" style="margin-top:16px"><h3>What the model relies on most</h3><p class="sub">Average pull on the prediction, across the test shipments.</p><div class="bars">' +
       imp.map(function (k) { return '<div class="bar-row"><div class="name">' + e(k[0]) + '</div>' + PS.barLine(k[1], imx, k[1].toFixed(2), { tip: k[0] + ': average pull ' + k[1].toFixed(3) }) + '</div>'; }).join('') + '</div>' +
-      '<p class="small muted" style="margin-top:12px">It learned from HIV-medicine shipments between 2006 and 2015, so it captures how shipping behaves in general, not cancer-medicine supply to the Gulf. ' + (PS.isSyn() ? 'In the synthetic view each supplier gets its own synthetic shipping terms and delivery record, so the marks differ more.' : 'Suppliers whose factories are in the same country, with no delivery history of their own, get the same mark.') + '</p></div></section>' +
+      '<p class="small muted" style="margin-top:12px">It learned from HIV-medicine shipments between 2006 and 2015, so it captures how shipping behaves in general, not cancer-medicine supply to the Gulf. ' + (PS.isSyn() ? 'In the synthetic view each supplier gets its own synthetic shipping terms and delivery record, so the marks differ more.' : 'Suppliers whose factories are in the same country, with no delivery history of their own, get the same mark.') + '</p></div>' +
+      (PS.hasSyn() ? delivery_by_supplier() : '') + '</section>' +
 
       '<section class="section"><h2>Billing-oddity model</h2><p class="sub">It looks at each invoice line\'s unit price, freight share and value, and flags the oddest 5% within each product group.</p>' +
       '<div class="grid g3">' + tile('Invoice lines checked', PS.num(m.c3.lines_scored), 'of ' + PS.num(m.c3.lines_total) + '; the rest have no freight figure') +
