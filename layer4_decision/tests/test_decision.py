@@ -123,3 +123,35 @@ def test_equal_suppliers_resolve_the_same_way_for_every_risk_dial():
     for lam in (0.25, 0.5, 1.0, 1.75, 3.0):
         a = allocate(p, 10000, 0.70, lam)["allocation"].set_index("manufacturer_id")
         assert a.loc["ALPHA", "vials"] == pytest.approx(3000) and a.loc["ZED", "vials"] == 0, lam
+
+
+def test_offline_factory_gets_nothing_and_others_cover():
+    """Stress test (natural disaster): an offline factory ships nothing; the others cover demand within their caps."""
+    p = _panel(6)
+    r = allocate(p, 10000, 0.70, 1.0, offline={"F0"})
+    a = r["allocation"].set_index("manufacturer_id")
+    assert a.loc["M0", "vials"] == 0 and r["diagnostics"]["offline_factories"] == ["F0"]
+    assert a["vials"].sum() + r["diagnostics"]["spot_buy_vials"] == pytest.approx(10000)
+    assert (a["share_pct"] <= 30 + 1e-6).all()
+
+
+def test_too_many_offline_factories_forces_an_emergency_purchase():
+    p = _panel(6)
+    r = allocate(p, 10000, 0.70, 1.0, offline={"F0", "F1", "F2", "F3"})   # 2 factories x 30% left
+    assert r["diagnostics"]["spot_buy_vials"] == pytest.approx(4000)
+    assert r["diagnostics"]["tie_break"] == "applied"
+
+
+def test_unknown_offline_factory_is_rejected():
+    with pytest.raises(ValueError):
+        allocate(_panel(3), 10000, 0.70, 1.0, offline={"NO_SUCH_FACTORY"})
+
+
+@pytest.mark.skipif(not engine.MATRIX.exists(), reason="run Layers 1 and 3 first")
+def test_disaster_changes_the_split_not_the_ranking():
+    m, tiers, sku = engine.load_inputs()
+    base = engine.run(m, tiers, sku, "Normal")
+    top = base["allocation"].sort_values("vials", ascending=False)["factory_group"].iloc[0]
+    hit = engine.run(m, tiers, sku, "Normal", offline_factories={top})
+    assert hit["ranking"]["S"].equals(base["ranking"]["S"])                      # quality unchanged
+    assert hit["allocation"].groupby("factory_group")["vials"].sum()[top] == 0  # that factory ships nothing

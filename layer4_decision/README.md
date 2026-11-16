@@ -55,6 +55,21 @@ Read this honestly on the slides:
 * **Plan inconsistency, no effect today:** the tier table says "5–10% probation trial", while §4.4 says a 15% cap. The
   §4.4 values are used; with no established factory, both relax to 30%.
 
+## Natural-disaster stress test (decision S1)
+
+`engine.run(..., offline_factories={"TEYRO_ORAGADAM", ...})` gives the named factory groups zero capacity and re-solves the
+split. The ranking is unchanged. If the remaining factories cannot cover demand, the shortfall is an emergency purchase.
+
+| What goes offline | Covered by approved suppliers? | Monthly cost (official US prices) |
+|---|---|---|
+| Nothing | yes | $279,546 |
+| Any one factory | yes; the others absorb it | unchanged |
+| Every factory in India (4 of 8) | yes, but Avyxa takes 1,000 vials | $2,607,054 (9.3 times) |
+| India plus Fresenius (country not stated on its label) | no: 1,000 vials bought in an emergency | $7,234,115 |
+
+The tie-break between equal suppliers now holds the emergency purchase and the supply cost separately and falls back
+to the first solve if it cannot finish, so it works even when an emergency purchase is needed.
+
 ## Outputs (`layer4_decision/outputs/`, regenerated each run)
 
 `weights_<mode>.csv` · `entropy_<mode>.csv` · `ranking_<mode>.csv` · `allocation_<mode>.csv` · `summary.json`

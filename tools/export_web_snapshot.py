@@ -130,6 +130,7 @@ def main() -> int:
                     "vials": [round(float(x), 1) for x in al["vials"]],
                     "cap_pct": [round(float(x), 1) for x in al["factory_cap_pct"]],
                     "spot": r["diagnostics"]["spot_buy_vials"], "status": r["diagnostics"]["solver_status"],
+                    "spend": r["diagnostics"]["monthly_spend_usd"],
                 }
                 if mode not in modes:
                     modes[mode] = {
@@ -141,6 +142,30 @@ def main() -> int:
                         "probation_cap": r["diagnostics"]["probation_cap_used"], "tier_cap": r["diagnostics"]["tier_cap"],
                     }
                     ahp_check = r["ahp_consistency"]
+
+    # ---- stress test: natural disaster takes factories offline (plan Q7 "scenario stress-testing") ----------
+    # A disaster changes what can ship, not a supplier's quality: rankings stay, only the order split re-solves.
+    fac = elig.groupby("source_plant_group").agg(country=("manufacturing_country", "first"),
+                                                 factory=("factory_name", "first")).reset_index()
+    india = sorted(fac.loc[fac["country"] == "India", "source_plant_group"])
+    unknown = sorted(fac.loc[fac["country"] == "Unknown", "source_plant_group"])
+    outages = [{"key": g, "groups": [g], "kind": "factory"} for g in sorted(fac["source_plant_group"])]
+    if india:
+        outages.append({"key": "COUNTRY_INDIA", "groups": india, "kind": "country", "country": "India"})
+        if unknown:   # worst case: factories whose country is unknown might also be in the affected country
+            outages.append({"key": "COUNTRY_INDIA_PLUS_UNKNOWN", "groups": india + unknown, "kind": "country_worst",
+                            "country": "India"})
+    stress = {}
+    for o in outages:
+        stress[o["key"]] = {}
+        for mode in MODES:
+            for lam in LAMBDAS:
+                for ent in ENTROPY:
+                    r = engine.run(m, tiers, sku, mode, lam, ent, set(o["groups"]))
+                    al = r["allocation"].set_index("manufacturer_id").reindex(ids)
+                    stress[o["key"]][f"{mode}|{lam:.2f}|{ent:.1f}"] = {
+                        "vials": [round(float(x), 1) for x in al["vials"]], "spot": r["diagnostics"]["spot_buy_vials"],
+                        "spend": r["diagnostics"]["monthly_spend_usd"], "status": r["diagnostics"]["solver_status"]}
 
     # ---- alerts, documents, models, sources --------------------------------------------------------------
     sh = pd.read_csv(INTERIM / "fda_shortages_sku.csv")
@@ -167,6 +192,7 @@ def main() -> int:
         },
         "content": content, "supplier_ids": ids, "suppliers": suppliers, "excluded": excluded,
         "modes": modes, "scenarios": scenarios,
+        "stress": {"outages": outages, "results": stress},
         "alerts": {
             "sku": records(sh, ["company_name", "status", "availability", "presentation", "shortage_reason",
                                 "update_date", "is_active"]),
@@ -202,9 +228,11 @@ def main() -> int:
     out = WEB / "data" / "snapshot.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(snapshot, separators=(",", ":"), default=clean))
-    bad = [k for k, v in scenarios.items() if v["status"] != "Optimal"]
+    bad = [k for k, v in scenarios.items() if v["status"] != "Optimal"] + \
+          [o + "|" + k for o, res in stress.items() for k, v in res.items() if v["status"] != "Optimal"]
     print(f"snapshot written: web/data/{out.name}  ({out.stat().st_size / 1024:.0f} KB) | suppliers {len(ids)} | "
-          f"scenarios {len(scenarios)} (not optimal: {len(bad)}) | glossary terms {len(snapshot['glossary'])}")
+          f"scenarios {len(scenarios)} + stress tests {sum(len(v) for v in stress.values())} (not optimal: {len(bad)}) | "
+          f"glossary terms {len(snapshot['glossary'])}")
     return 1 if bad else 0
 
 

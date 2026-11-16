@@ -43,7 +43,8 @@ check('nav marks the current page', (await ev('document.querySelector("#nav a[ar
 
 // overview: key findings are computed from the data
 await go('#/');
-check('7 key findings are shown', (await ev('document.querySelectorAll(".finding").length')) === 7);
+check('8 key findings are shown', (await ev('document.querySelectorAll(".finding").length')) === 8);
+check('the disaster finding links to the stress test', (await ev('document.querySelector(".findings").textContent')).includes('A disaster shutting every factory in India') && await ev('!!document.querySelector(".finding a[href*=outage]")'));
 check('findings name the last-ranked supplier and its reason', (await ev('document.querySelector(".findings").textContent')).includes('ranks last') && (await ev('document.querySelector(".findings").textContent')).includes('compliance'));
 check('every finding links to its evidence page', await ev('[...document.querySelectorAll(".finding a")].every(a => a.getAttribute("href").startsWith("#/"))'));
 
@@ -88,6 +89,25 @@ await ev('const s = document.getElementById("ent"); s.value = "0.5"; s.dispatchE
 check('data-weight slider changes the weights shown', (await ev('document.getElementById("view").textContent')).includes("Board's everyday weight"));
 await ev('const s = document.getElementById("ent"); s.value = "0"; s.dispatchEvent(new Event("input", { bubbles: true }))'); await sleep(150);
 
+// natural-disaster stress test
+const pickOutage = async (v) => { await ev(`const s = document.getElementById("outage"); s.value = ${JSON.stringify(v)}; s.dispatchEvent(new Event("change", { bubbles: true }))`); await sleep(200); };
+const ranksBefore = await ev('JSON.stringify(PS.scenario().rank)');
+check('stress-test selector is on the split page', await ev('!!document.getElementById("outage") && document.getElementById("outage").options.length === 10'));
+check('worst case is not a menu option (shown as a caveat instead)', await ev('![...document.getElementById("outage").options].some(o => o.value.includes("PLUS_UNKNOWN"))'));
+await pickOutage('TEYRO_ORAGADAM');
+check('one factory offline: fully covered, cost unchanged', (await ev('document.getElementById("view").textContent')).includes('still fully covered') && (await ev('document.getElementById("view").textContent')).includes('cost does not change'));
+check('offline factory gets no vials', await ev('PS.data.suppliers.every((s, i) => s.factory_group !== "TEYRO_ORAGADAM" || PS.stressed("TEYRO_ORAGADAM").vials[i] < 0.5)'));
+await pickOutage('COUNTRY_INDIA');
+const india = await ev('document.getElementById("view").textContent');
+check('India offline: cost rise shown ($279,546 -> $2,607,054)', india.includes('279,546') && india.includes('2,607,054'));
+check('India offline: unknown-country caveat with worst case (1,000 emergency vials, $7,234,115)', india.includes('Caveat') && india.includes('1,000 vials') && india.includes('7,234,115'));
+check('a disaster does not change the ranking', (await ev('JSON.stringify(PS.scenario().rank)')) === ranksBefore);
+await pickOutage('none');
+check('no disaster: banner gone', !(await ev('document.getElementById("view").textContent')).includes('offline.'));
+await go('#/'); await go('#/split?outage=COUNTRY_INDIA');
+check('a link can open the stress test', await ev('PS.state.outage === "COUNTRY_INDIA" && document.getElementById("outage").value === "COUNTRY_INDIA"'));
+await pickOutage('none');
+
 // approval: validation, log, verification, tamper detection
 await ev('localStorage.removeItem("pharmashield_audit_v1")'); await go('#/'); await go('#/split');
 await ev('document.querySelector("#approve-form button[type=submit]").click()'); await sleep(200);
@@ -120,6 +140,9 @@ await ev('const g = document.getElementById("gloss-search"); g.value = "OAI"; g.
 const some = await ev('document.querySelectorAll(".gloss-item").length');
 check(`glossary search narrows the list (${all} -> ${some})`, some > 0 && some < all && (await ev('document.getElementById("gloss-out").textContent')).includes('OAI'));
 check('search box keeps focus-able state', await ev('document.getElementById("gloss-search").value === "OAI"'));
+
+await go('#/trust');
+check('Trust page lists every difference from the plan', (await ev('document.getElementById("view").textContent')).includes('Where this differs from the project plan') && (await ev('[...document.querySelectorAll("#view h2")].find(h => h.textContent.includes("differs")).parentElement.querySelectorAll("tbody tr").length')) === 12);
 
 // theme toggle, deep link
 await ev('document.getElementById("theme-toggle").click()');

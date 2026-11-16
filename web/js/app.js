@@ -51,6 +51,7 @@
     if (m.entropy_shares.indexOf(data) >= 0) s.ent = data;
     if (q.get('supplier') && PS.byId(q.get('supplier'))) s.supplier = q.get('supplier');
     if (q.get('a') && PS.byId(q.get('a'))) s.cmpA = q.get('a');
+    if (q.get('outage') && (q.get('outage') === 'none' || PS.outage(q.get('outage')))) s.outage = q.get('outage');
     if (q.get('b') && PS.byId(q.get('b'))) s.cmpB = q.get('b');
   }
   function render(navigated) {
@@ -77,12 +78,13 @@
     if (!who) return fail('Enter your initials or staff ID.');
     if (decision !== 'Approve as recommended' && !reason) return fail('Give a reason when you change or reject the recommendation.');
     err.hidden = true;
-    const d = PS.data, s = PS.state, sc = PS.scenario(), split = {}, weights = {};
+    const d = PS.data, s = PS.state, sc = PS.stressed(), split = {}, weights = {};
     d.suppliers.forEach(function (sp, i) { if (sc.vials[i] > 0.5) split[sp.name] = sc.vials[i]; });
     PS.criteria().forEach(function (c, j) { weights[c.short] = sc.w[j]; });
     try {
       await PSAudit.append({ approver: who, decision: decision, reason: reason, mode: s.mode, risk_dial: s.lam, entropy_share: s.ent,
-        demand_vials: d.meta.demand, split_vials: split, emergency_purchase_vials: sc.spot, weights: weights,
+        demand_vials: d.meta.demand, split_vials: split,
+        stress_test: s.outage && s.outage !== 'none' ? PS.outageLabel(PS.outage(s.outage)) + ' offline' : 'none', emergency_purchase_vials: sc.spot, weights: weights,
         snapshot_as_of: d.meta.as_of, score_table_sha256: d.meta.matrix_sha256 });
       form.reset();
       await refreshAudit();
@@ -150,6 +152,7 @@
   });
   document.addEventListener('change', function (ev) {
     const t = ev.target;
+    if (t.id === 'outage') { PS.state.outage = t.value; renderView(); return; }
     if (t.id === 'cmp-a' || t.id === 'cmp-b') {
       PS.state[t.id === 'cmp-a' ? 'cmpA' : 'cmpB'] = t.value;
       if (PS.state.cmpA === PS.state.cmpB) {                  // never compare a supplier with itself: swap the other one

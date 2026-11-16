@@ -34,7 +34,7 @@ late more often than EXW ones (13% vs 5%), so that assumption alone moves the la
 |---|---|
 | **Freight** | The cost of transporting the goods. |
 | **Insurance** | The cost of insuring the goods during transport. |
-| **Landed cost** | The total cost to get one vial to you: price + freight + insurance. This is C1. |
+| **Landed cost** | The total cost to get one vial to you: price + freight + insurance. C1 is based on it (freight to the UAE has no data, so it is left out). |
 | **Freight-to-value ratio** | Freight cost divided by goods value. A $4,000 freight bill on $5 of goods is suspicious. |
 | **Shipment mode** | Air, sea (ocean) or truck. |
 | **Air charter** | A whole aircraft hired for one shipment. |
@@ -246,7 +246,7 @@ late more often than EXW ones (13% vs 5%), so that assumption alone moves the la
 | **Pairwise comparison** | Comparing the marks two at a time. This is how AHP collects opinions. |
 | **Consistency ratio (CR)** | A check that those opinions do not contradict each other. It must be below 0.10. |
 | **Entropy weights** | Weights worked out from the data itself: a mark that varies more counts more. |
-| **Hybrid weights** | Half AHP (opinion) plus half entropy (data). |
+| **Hybrid weights** | The plan's mix: half AHP (opinion) plus half entropy (data). This prototype uses the board's AHP weights by default, with entropy on a slider (it proved unstable on 11 suppliers). |
 | **TOPSIS** | The formula that combines the five marks into one rank, by closeness to an ideal supplier. |
 | **Ideal best / ideal worst** | An imaginary supplier with the best (or worst) value on every mark. |
 | **Closeness score (S)** | TOPSIS's result, from 0 to 1. Higher is better. |
@@ -260,10 +260,10 @@ late more often than EXW ones (13% vs 5%), so that assumption alone moves the la
 | **Lambda (λ)** | A dial that sets how much the split cares about risk compared with cost. |
 | **Binary variable** | A yes-or-no choice inside the maths, such as "is this supplier used at all?" |
 | **Concentration cap** | The maximum share one supplier may get. |
-| **70/20/10** | The example split: main supplier, backup, trial supplier. |
+| **70/20/10** | The plan's example split: main supplier, backup, trial supplier. It needs a supplier with its own delivery record; while all suppliers are new, the plan's rules cap each factory at 30%. |
 | **Normal / Crisis / Cost Focus mode** | Three preset weight settings. Crisis shifts weight from cost to route risk. |
 | **Stress factor** | In Crisis mode, route risk is multiplied by 1.5. |
-| **Stress test / scenario** | Asking "what if this bad thing happens?" and re-running the numbers. |
+| **Stress test / scenario** | Asking "what if this bad thing happens?" and re-running the numbers. Here: a natural disaster takes factories offline and the order split re-solves. |
 | **Sensitivity analysis** | Changing one input to see how much the answer moves. |
 
 ## 8. Governance and compliance

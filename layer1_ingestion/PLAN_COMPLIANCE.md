@@ -12,18 +12,18 @@ Column names, order and types are enforced in code (`scenario.LOCKED_SCHEMA`) an
 | 2 | `criticality_tier` | int | ✅ | 1 (Life-Critical) |
 | 3 | `manufacturer_id` | str | ✅ | canonical name after suffix normalisation; links listed in `entity_match_candidates.csv` for manual verification |
 | 4 | `labeler_name_fda` | str | ✅ | exact `labeler_name` from openFDA NDC |
-| 5 | `manufacturing_country` | str | ✅ | manual override > SPL label "Manufactured by" text > HQ hint (flagged) > `Unknown` |
-| 6 | `is_probation` | bool | ✅ | fewer than 5 historical shipments in SCMS (vendor or plant site, incl. parent alias) |
-| 7 | `monthly_capacity_units` | int | ✅ | SCENARIO default 4,000; override file |
-| 8 | `C1_landed_cost` | float [0,1] | ✅ | min-max of (unit price + freight + insurance) per vial; raw USD in `C1_landed_cost_usd_raw` |
-| 9 | `C2_delivery_risk` | float [0,1] | ⬜ Member 4A | empty — XGBoost `predict_proba` |
-| 10 | `C3_price_integrity` | float [0,1] | partly | 0.0 for probation vendors (plan default); others ⬜ Member 4A |
-| 11 | `C4_compliance_risk` | float [0,1] | ⬜ Member 4B | empty — inputs provided: `oai_count_5yr`, `vai_count_5yr`, `recalls_class_i_ii_5yr`, letters, contracts |
-| 12 | `C5_route_exposure` | float [0,1] | ✅ | `min(1, 1.0 × hormuz_air_share) × (1 − LPI ÷ 5)` (Normal mode) |
-| 13 | `hormuz_air_share` | float [0,1] | ✅ | SCENARIO corridor table |
+| 5 | `manufacturing_country` | str | ✅ | official drug label, checked by hand on DailyMed (`reference/sku_manufacturing_sites.csv`, 10 of 11); not stated → `Unknown` with neutral values |
+| 6 | `is_probation` | bool | ✅ | fewer than 5 of the maker's **own** historical shipments in SCMS (no parent-company history; decision 9) |
+| 7 | `monthly_capacity_units` | int | ✅ | no public data → non-limiting (= demand, 10,000) for every maker (decision 3) |
+| 8 | `C1_landed_cost` | float [0,1] | ✅ | official CMS price + insurance per vial (freight: no data, excluded; decision 4), min-max; raw USD in `C1_landed_cost_usd_raw` |
+| 9 | `C2_delivery_risk` | float [0,1] | Layer 3 ✅ | XGBoost `predict_proba`, averaged over real shipments from the plant country (decision 6) |
+| 10 | `C3_price_integrity` | float [0,1] | Layer 3 ✅ | Isolation Forest share of flagged lines; 0.0 for probation makers (plan default) |
+| 11 | `C4_compliance_risk` | float [0,1] | Layer 3 ✅ | FDA inspections + warning letters of the SKU's factory, seller's injectable recalls; contract term 0 (synthetic contracts, decision 7) |
+| 12 | `C5_route_exposure` | float [0,1] | ✅ | `min(1, 1.0 × hormuz_air_share) × (1 − LPI ÷ 5)` (Normal mode); one evidence-based share 0.85 for every origin (decision 5) |
+| 13 | `hormuz_air_share` | float [0,1] | ✅ | 0.85 for every origin, from UAE port volumes (`reference/scenario_corridor_assumptions.csv`) |
 | 14 | `active_fda_shortage` | bool | ✅ | any active openFDA shortage record linked to the labeler |
-| 15 | `oai_count_5yr` | int | 🟡 | OAI rows in the FDA inspections dataset, last 5 years |
-| 16 | `shap_top3_reasons` | str (JSON) | ⬜ Member 4A | `"[]"` placeholder (valid JSON) |
+| 15 | `oai_count_5yr` | int | ✅ | distinct OAI CGMP inspections of the SKU's factory (FDA factory number), last 5 years |
+| 16 | `shap_top3_reasons` | str (JSON) | Layer 3 ✅ | top 3 SHAP drivers of C2, in plain English |
 
 Supporting columns are appended after column 16, never between the locked ones.
 The schema, with the plan's definitions and a pass / fail per column, is shown in the dashboard tab **Data schema (§5.1)**
@@ -50,8 +50,10 @@ The schema, with the plan's definitions and a pass / fail per column, is shown i
 | §6.1 | PDPL: contact details minimised | ✅ e-mails, phones, salutation names redacted | `ingestion/documents.py` |
 | §6.1 | GenAI disclosure + prompt log | ✅ | `docs/GENAI_PROMPT_LOG_layer1.md` |
 
-Not Layer 1 (owners per §6.2): XGBoost + SHAP and Isolation Forest (4A), warning-letter classifier and contract extractor (4B),
-AHP / Entropy / TOPSIS / PuLP (3), 4-tab cockpit `app.py`, audit log and demo video (5), slides (1).
+Other layers: XGBoost + SHAP, Isolation Forest, warning-letter and contract readers (`layer3_engines/`); AHP, entropy,
+TOPSIS, PuLP and the disaster stress test (`layer4_decision/`); the showcase website (`web/`, Vercel) and the Streamlit
+operator tool (`streamlit_app.py`). Every deliberate difference from the plan, with its reason, is listed in
+`docs/DECISIONS.md` and on the website's Evidence & trust page.
 
 ## §3.2 Dataset inventory
 
@@ -61,7 +63,7 @@ AHP / Entropy / TOPSIS / PuLP (3), 4-tab cockpit `app.py`, audit log and demo vi
 | openFDA NDC Directory API | 🟡 | `ingestion/openfda.py` |
 | openFDA Drug Shortages API | 🟡 | `ingestion/openfda.py` |
 | openFDA Drug Enforcement API | 🟡 | `ingestion/openfda.py` |
-| FDA Data Dashboard Inspections (bulk) | 🟡 manual export or API only — the automatic download link returned 404 on 15 Nov 2026; needs the file dropped in `data/manual/fda_inspections/` | `ingestion/fda_inspections.py` |
+| FDA Data Dashboard Inspections (bulk) | ✅ manual export (the automatic link returned 404 on 15 Nov 2026), 9,262 drug inspections loaded | `ingestion/fda_inspections.py` |
 | FDA CGMP Warning Letters | 🟡 51 real letter URLs shipped | `data/manual/warning_letters/urls.csv` |
 | World Bank LPI & WGI | 🟡 | `ingestion/worldbank.py` |
 | USAID GHSC-PSM (optional stretch) | ✅ optional loader; skipped if no file (first item in the plan's cut order) | `ingestion/optional_sources.py` |
@@ -85,8 +87,7 @@ AHP / Entropy / TOPSIS / PuLP (3), 4-tab cockpit `app.py`, audit log and demo vi
 
 ## One point where the plan and the live data disagree
 
-The plan says the NDC directory returned **18 labelers including Cipla and Hetero**. A check on 15 Nov 2026 showed 40
-human-prescription carboplatin product rows from **11** labelers, plus 8 bulk-powder rows; Cipla and Hetero were not
-among the 11. The likely explanation is that the 18 counts bulk-API labelers too. The pipeline therefore follows the plan
-(`panel_scope = "all_ndc_labelers"`) and tags every row `finished_injection` or `bulk_api_only`. The exact count will be
-whatever the live run returns; switch to `finished_injection_only` in `config.py` for the strict §4.1 gate.
+The plan says the NDC directory returned **18 labelers including Cipla and Hetero**. The live run on 15 Nov 2026
+confirms **18**: **11** sell finished carboplatin vials and **7** (including Cipla and Hetero) list only the bulk
+ingredient. All 18 are kept in `suppliers_matrix.csv`; only the 11 finished-vial makers (`eligible_for_ranking`) are
+ranked and receive orders, because a bulk-powder seller cannot supply hospital vials (plan §4.1).

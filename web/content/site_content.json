@@ -10,50 +10,230 @@
   "why_it_matters": {
     "note": "Figures as cited in the team's project plan. They were not independently re-checked in this build.",
     "stats": [
-      {"value": "~80%", "label": "of GCC medicines are imported", "source": "Think Global Health / CFR, Mar 2026"},
-      {"value": "25 days", "label": "average time to find and onboard a replacement supplier", "source": "Ivalua via Supply Chain Dive, Jul 2026"},
-      {"value": "70%", "label": "of organisations had 1 to 5 critical supplier failures in 12 months", "source": "Ivalua via Supply Chain Dive, Jul 2026"},
-      {"value": "48%", "label": "of new 2026 drug shortages are sole-source products", "source": "ASHP / STAT, Q3 2026"}
+      {
+        "value": "~80%",
+        "label": "of GCC medicines are imported",
+        "source": "Think Global Health / CFR, Mar 2026"
+      },
+      {
+        "value": "25 days",
+        "label": "average time to find and onboard a replacement supplier",
+        "source": "Ivalua via Supply Chain Dive, Jul 2026"
+      },
+      {
+        "value": "70%",
+        "label": "of organisations had 1 to 5 critical supplier failures in 12 months",
+        "source": "Ivalua via Supply Chain Dive, Jul 2026"
+      },
+      {
+        "value": "48%",
+        "label": "of new 2026 drug shortages are sole-source products",
+        "source": "ASHP / STAT, Q3 2026"
+      }
     ]
   },
   "how_it_works": [
-    {"step": "1", "title": "Collect", "text": "Pull public data: who may sell the drug, FDA inspections, recalls, shortages, warning letters, World Bank logistics scores, and 10,000 past medicine shipments."},
-    {"step": "2", "title": "Identify the factory", "text": "Find the factory that really makes each product from its official drug label. Several brand names turn out to be one factory."},
-    {"step": "3", "title": "Score five risks", "text": "Cost, late delivery, billing oddities, compliance and route exposure. Each runs from 0 (best) to 1 (worst)."},
-    {"step": "4", "title": "Rank and split", "text": "Rank the suppliers with the board's priorities, then split the monthly order across independent factories."},
-    {"step": "5", "title": "A human approves", "text": "Nothing is ordered until a category manager signs off. Every approval is logged and tamper-checked."}
+    {
+      "step": "1",
+      "title": "Collect",
+      "text": "Pull public data: who may sell the drug, FDA inspections, recalls, shortages, warning letters, World Bank logistics scores, and 10,000 past medicine shipments."
+    },
+    {
+      "step": "2",
+      "title": "Identify the factory",
+      "text": "Find the factory that really makes each product from its official drug label. Several brand names turn out to be one factory."
+    },
+    {
+      "step": "3",
+      "title": "Score five risks",
+      "text": "Cost, late delivery, billing oddities, compliance and route exposure. Each runs from 0 (best) to 1 (worst)."
+    },
+    {
+      "step": "4",
+      "title": "Rank and split",
+      "text": "Rank the suppliers with the board's priorities, then split the monthly order across independent factories."
+    },
+    {
+      "step": "5",
+      "title": "A human approves",
+      "text": "Nothing is ordered until a category manager signs off. Every approval is logged and tamper-checked."
+    }
   ],
   "criteria": [
-    {"id": "C1_landed_cost", "short": "Cost", "code": "C1", "plain": "How expensive one vial is, compared with the other suppliers.", "method": "Official US Medicare price list (one price for all generics). Freight to the UAE has no data and is left out."},
-    {"id": "C2_delivery_risk", "short": "Late delivery", "code": "C2", "plain": "The chance that a shipment arrives late.", "method": "An XGBoost model trained on about 10,000 real medicine shipments, with the top 3 reasons shown for each supplier."},
-    {"id": "C3_price_integrity", "short": "Billing oddities", "code": "C3", "plain": "How often the supplier's invoices look unusual.", "method": "An Isolation Forest flags the oddest 5% of invoice lines. A supplier with no invoice history of its own scores 0 (the plan's rule)."},
-    {"id": "C4_compliance_risk", "short": "Compliance", "code": "C4", "plain": "How clean the factory's record with the US drug regulator is.", "method": "FDA inspections and warning letters for the factory that makes the product, plus the seller's injectable recalls."},
-    {"id": "C5_route_exposure", "short": "Route exposure", "code": "C5", "plain": "How exposed the supply route is to a Hormuz or Gulf-airspace disruption.", "method": "One evidence-based exposure share for every origin, adjusted by the origin country's World Bank logistics score."}
+    {
+      "id": "C1_landed_cost",
+      "short": "Cost",
+      "code": "C1",
+      "plain": "How expensive one vial is, compared with the other suppliers.",
+      "method": "Official US Medicare price list (one price for all generics). Freight to the UAE has no data and is left out."
+    },
+    {
+      "id": "C2_delivery_risk",
+      "short": "Late delivery",
+      "code": "C2",
+      "plain": "The chance that a shipment arrives late.",
+      "method": "An XGBoost model that learned from 7,771 real medicine shipments (up to 2013) and was tested on 2,545 later ones. The top 3 reasons are shown for each supplier."
+    },
+    {
+      "id": "C3_price_integrity",
+      "short": "Billing oddities",
+      "code": "C3",
+      "plain": "How often the supplier's invoices look unusual.",
+      "method": "An Isolation Forest flags the oddest 5% of invoice lines. A supplier with no invoice history of its own scores 0 (the plan's rule)."
+    },
+    {
+      "id": "C4_compliance_risk",
+      "short": "Compliance",
+      "code": "C4",
+      "plain": "How clean the factory's record with the US drug regulator is.",
+      "method": "FDA inspections and warning letters for the factory that makes the product, plus the seller's injectable recalls."
+    },
+    {
+      "id": "C5_route_exposure",
+      "short": "Route exposure",
+      "code": "C5",
+      "plain": "How exposed the supply route is to a Hormuz or Gulf-airspace disruption.",
+      "method": "One evidence-based exposure share for every origin, adjusted by the origin country's World Bank logistics score."
+    }
   ],
   "evidence_levels": {
-    "real": {"label": "Real data", "plain": "Measured, with a cited public source."},
-    "standin": {"label": "Stand-in", "plain": "Real data about something close, used because the exact data is not public. Labelled as such."},
-    "nodata": {"label": "No data", "plain": "Nothing exists, so every supplier gets the same neutral value and it cannot change the ranking."},
-    "judgement": {"label": "Team setting", "plain": "A stated choice by the plan or the team, visible and adjustable."}
+    "real": {
+      "label": "Real data",
+      "plain": "Measured, with a cited public source."
+    },
+    "standin": {
+      "label": "Stand-in",
+      "plain": "Real data about something close, used because the exact data is not public. Labelled as such."
+    },
+    "nodata": {
+      "label": "No data",
+      "plain": "Nothing exists, so every supplier gets the same neutral value and it cannot change the ranking."
+    },
+    "judgement": {
+      "label": "Team setting",
+      "plain": "A stated choice by the plan or the team, visible and adjustable."
+    }
   },
   "evidence_ledger": [
-    {"input": "Who is allowed to sell the drug", "feeds": "Supplier list", "level": "real", "source": "openFDA NDC Directory", "note": "18 labelers; 11 sell finished vials and are ranked. 7 sell only raw powder and are excluded."},
-    {"input": "Which factory makes each product, and where", "feeds": "All marks", "level": "real", "source": "Official drug labels (DailyMed) and the FDA establishment registry", "note": "Known for 10 of 11 suppliers. One label does not say, so that supplier gets neutral values."},
-    {"input": "Price per vial", "feeds": "C1 Cost", "level": "standin", "source": "CMS Medicare Part B payment limits, October 2026", "note": "A US reimbursement price, not a UAE tender price. One price covers all generics; the branded product has its own, far higher price."},
-    {"input": "Freight cost to the UAE", "feeds": "C1 Cost", "level": "nodata", "source": "None", "note": "Left out of the cost, so it is the same for every supplier."},
-    {"input": "How shipments behave (training data)", "feeds": "C2 Late delivery", "level": "standin", "source": "USAID SCMS delivery history, 2006 to 2015", "note": "Real medicine shipments, but HIV medicines sent to other regions, not oncology vials sent to the Gulf."},
-    {"input": "Shipping mode, terms and weight for UAE orders", "feeds": "C2 Late delivery", "level": "nodata", "source": "None", "note": "Not guessed. Each supplier's score is averaged over real past shipments from its factory's country."},
-    {"input": "Each supplier's own delivery history", "feeds": "C2, C3, probation", "level": "real", "source": "USAID SCMS delivery history", "note": "None of the 11 has 5 or more past shipments of its own, so all are treated as new suppliers."},
-    {"input": "FDA inspection results", "feeds": "C4 Compliance", "level": "real", "source": "FDA inspection classifications, last 5 years", "note": "Counted only for the factory that makes the product. Other plants of the same company are shown as a note, never scored."},
-    {"input": "Recalls", "feeds": "C4 Compliance", "level": "real", "source": "openFDA drug enforcement reports, last 5 years", "note": "Serious recalls of injectable products by the company on the box. Companies with more products tend to have more recalls."},
-    {"input": "FDA warning letters", "feeds": "C4 Compliance", "level": "standin", "source": "50 hand-picked FDA warning letters", "note": "A sample, not every letter. 'No letter' means none in our sample."},
-    {"input": "Supplier contracts", "feeds": "C4 Compliance", "level": "nodata", "source": "None (the 11 contracts are invented for testing)", "note": "Not scored. The contract reader is shown as a demo only."},
-    {"input": "Share of cargo exposed to Hormuz or Gulf airspace", "feeds": "C5 Route exposure", "level": "standin", "source": "UAE port volumes (Jebel Ali vs Khor Fakkan)", "note": "One share, 0.85, for every origin. No evidence supports different shares by country."},
-    {"input": "Quality of each country's logistics", "feeds": "C5 Route exposure", "level": "real", "source": "World Bank Logistics Performance Index", "note": "The only part of route exposure that differs between suppliers."},
-    {"input": "Factory capacity", "feeds": "Order split", "level": "nodata", "source": "None", "note": "Not public, so capacity never limits the split. The plan's share caps do."},
-    {"input": "How much each mark counts (weights)", "feeds": "Ranking", "level": "judgement", "source": "The project plan's Tier 1 weights", "note": "Cost 10%, late delivery 30%, billing 5%, compliance 30%, route 25%."},
-    {"input": "How serious each kind of warning letter is", "feeds": "C4 Compliance", "level": "judgement", "source": "Team setting", "note": "Sterility and data integrity count most."},
-    {"input": "Risk dial for the order split", "feeds": "Order split", "level": "judgement", "source": "Set by the user", "note": "How strongly the split avoids lower-ranked suppliers compared with saving money."}
+    {
+      "input": "Who is allowed to sell the drug",
+      "feeds": "Supplier list",
+      "level": "real",
+      "source": "openFDA NDC Directory",
+      "note": "18 labelers; 11 sell finished vials and are ranked. 7 sell only raw powder and are excluded."
+    },
+    {
+      "input": "Which factory makes each product, and where",
+      "feeds": "All marks",
+      "level": "real",
+      "source": "Official drug labels (DailyMed) and the FDA establishment registry",
+      "note": "Known for 10 of 11 suppliers. One label does not say, so that supplier gets neutral values."
+    },
+    {
+      "input": "Price per vial",
+      "feeds": "C1 Cost",
+      "level": "standin",
+      "source": "CMS Medicare Part B payment limits, October 2026",
+      "note": "A US reimbursement price, not a UAE tender price. One price covers all generics; the branded product has its own, far higher price."
+    },
+    {
+      "input": "Freight cost to the UAE",
+      "feeds": "C1 Cost",
+      "level": "nodata",
+      "source": "None",
+      "note": "Left out of the cost, so it is the same for every supplier."
+    },
+    {
+      "input": "How shipments behave (training data)",
+      "feeds": "C2 Late delivery",
+      "level": "standin",
+      "source": "USAID SCMS delivery history, 2006 to 2015",
+      "note": "Real medicine shipments, but HIV medicines sent to other regions, not oncology vials sent to the Gulf."
+    },
+    {
+      "input": "Shipping mode, terms and weight for UAE orders",
+      "feeds": "C2 Late delivery",
+      "level": "nodata",
+      "source": "None",
+      "note": "Not guessed. Each supplier's score is averaged over real past shipments from its factory's country."
+    },
+    {
+      "input": "Each supplier's own delivery history",
+      "feeds": "C2, C3, probation",
+      "level": "real",
+      "source": "USAID SCMS delivery history",
+      "note": "None of the 11 has 5 or more past shipments of its own, so all are treated as new suppliers."
+    },
+    {
+      "input": "FDA inspection results",
+      "feeds": "C4 Compliance",
+      "level": "real",
+      "source": "FDA inspection classifications, last 5 years",
+      "note": "Counted only for the factory that makes the product. Other plants of the same company are shown as a note, never scored."
+    },
+    {
+      "input": "Recalls",
+      "feeds": "C4 Compliance",
+      "level": "real",
+      "source": "openFDA drug enforcement reports, last 5 years",
+      "note": "Serious recalls of injectable products by the company on the box. Companies with more products tend to have more recalls."
+    },
+    {
+      "input": "FDA warning letters",
+      "feeds": "C4 Compliance",
+      "level": "standin",
+      "source": "50 hand-picked FDA warning letters",
+      "note": "A sample, not every letter. 'No letter' means none in our sample."
+    },
+    {
+      "input": "Supplier contracts",
+      "feeds": "C4 Compliance",
+      "level": "nodata",
+      "source": "None (the 11 contracts are invented for testing)",
+      "note": "Not scored. The contract reader is shown as a demo only."
+    },
+    {
+      "input": "Share of cargo exposed to Hormuz or Gulf airspace",
+      "feeds": "C5 Route exposure",
+      "level": "standin",
+      "source": "UAE port volumes (Jebel Ali vs Khor Fakkan)",
+      "note": "One share, 0.85, for every origin. No evidence supports different shares by country."
+    },
+    {
+      "input": "Quality of each country's logistics",
+      "feeds": "C5 Route exposure",
+      "level": "real",
+      "source": "World Bank Logistics Performance Index",
+      "note": "The only part of route exposure that differs between suppliers."
+    },
+    {
+      "input": "Factory capacity",
+      "feeds": "Order split",
+      "level": "nodata",
+      "source": "None",
+      "note": "Not public, so capacity never limits the split. The plan's share caps do."
+    },
+    {
+      "input": "How much each mark counts (weights)",
+      "feeds": "Ranking",
+      "level": "judgement",
+      "source": "The project plan's Tier 1 weights",
+      "note": "Cost 10%, late delivery 30%, billing 5%, compliance 30%, route 25%."
+    },
+    {
+      "input": "How serious each kind of warning letter is",
+      "feeds": "C4 Compliance",
+      "level": "judgement",
+      "source": "Team setting",
+      "note": "Sterility and data integrity count most."
+    },
+    {
+      "input": "Risk dial for the order split",
+      "feeds": "Order split",
+      "level": "judgement",
+      "source": "Set by the user",
+      "note": "How strongly the split avoids lower-ranked suppliers compared with saving money."
+    }
   ],
   "limits": [
     "The late-delivery model learned from HIV-medicine shipments to other regions between 2006 and 2015. It captures how shipping behaves in general, not oncology supply to the Gulf.",
@@ -64,10 +244,87 @@
     "This is a prototype for a course project. It is not procurement advice."
   ],
   "governance": [
-    {"title": "A human decides", "text": "The system recommends. A category manager approves, overrides or rejects, and the decision is logged."},
-    {"title": "Explainable", "text": "Every supplier shows why it scored as it did: the top 3 delivery-risk reasons and what its compliance mark is made of."},
-    {"title": "Fair to suppliers", "text": "A supplier is scored on its own factory and its own history, never on a country name alone or on a parent company's record."},
-    {"title": "Privacy (UAE PDPL)", "text": "No personal data feeds the scores. The approval log stores initials or a staff ID only."},
-    {"title": "AI disclosure", "text": "The code and this site were produced with Claude and reviewed by the team. The contract extraction is AI-generated and is not scored."}
+    {
+      "title": "A human decides",
+      "text": "The system recommends. A category manager approves, overrides or rejects, and the decision is logged."
+    },
+    {
+      "title": "Explainable",
+      "text": "Every supplier shows why it scored as it did: the top 3 delivery-risk reasons and what its compliance mark is made of."
+    },
+    {
+      "title": "Fair to suppliers",
+      "text": "A supplier is scored on its own factory and its own history, never on a country name alone or on a parent company's record."
+    },
+    {
+      "title": "Privacy (UAE PDPL)",
+      "text": "No personal data feeds the scores. The approval log stores initials or a staff ID only."
+    },
+    {
+      "title": "AI disclosure",
+      "text": "The code and this site were produced with Claude and reviewed by the team. The contract extraction is AI-generated and is not scored."
+    }
+  ],
+  "plan_differences": [
+    {
+      "plan": "Rank all 18 authorised labelers (§3).",
+      "here": "18 confirmed; 11 ranked.",
+      "why": "7 of the 18 (including Cipla and Hetero) list only the raw ingredient and cannot supply hospital vials (plan §4.1: only makers authorised for the target product)."
+    },
+    {
+      "plan": "Blend the board's weights 50/50 with data-driven entropy weights (§4.2).",
+      "here": "The board's weights decide; entropy is a slider from 0% to 50%.",
+      "why": "With 11 suppliers and many ties, two standard entropy formulas gave opposite weights and the ranking swung. The plan itself lists the entropy slider as optional."
+    },
+    {
+      "plan": "Cost from 2026 tender quotes plus origin freight markups (§4.3).",
+      "here": "One official US price for all generics, Avyxa's own price; freight left out.",
+      "why": "No public tender quotes or UAE freight costs exist. Real tender quotes would replace the stand-in in a live pilot."
+    },
+    {
+      "plan": "Late-delivery risk from each maker's shipping mode, terms and freight (§3.1).",
+      "here": "Averaged over real past shipments from each factory's country.",
+      "why": "Shipping details for UAE orders are not public, so no single value is guessed."
+    },
+    {
+      "plan": "Route exposure from each origin's Hormuz and Gulf-air share (§4.3).",
+      "here": "One evidence-based share, 0.85, for every origin.",
+      "why": "UAE port volumes support one share; no evidence supports different shares by country. The World Bank logistics score still differs by country."
+    },
+    {
+      "plan": "Compliance includes an AI reading of each supplier's contract (§4.3).",
+      "here": "The contract term is 0 for everyone; the contract reader is a demo.",
+      "why": "The 11 contracts were invented for testing, so scoring them would rank real companies on fiction."
+    },
+    {
+      "plan": "Plant capacity is a hard limit in the order split (§4.4).",
+      "here": "Capacity never limits the split; the share caps do.",
+      "why": "Factory capacity is not public."
+    },
+    {
+      "plan": "Share caps per supplier (§4.4).",
+      "here": "Share caps per factory.",
+      "why": "Official labels show that 11 brand names come from 8 factories. Capping by name would let one factory carry up to 90% through three names."
+    },
+    {
+      "plan": "A 70/20/10 example split (§2).",
+      "here": "30/30/30/10 across four factories.",
+      "why": "Every supplier is new (none has 5 own deliveries on record), so the plan's own probation rule caps each factory at 30%. In a pilot, the GPO's delivery records lift this."
+    },
+    {
+      "plan": "Probation trial share: 5-10% in the tier table, cap 15% in the order-split rules (§4.2 vs §4.4).",
+      "here": "The order-split rules (§4.4) are followed.",
+      "why": "The plan disagrees with itself; with no established supplier both relax to 30%, so today's result is the same either way."
+    },
+    {
+      "plan": "A 4-tab Streamlit cockpit with a live AI contract reader (§5.2 step 9).",
+      "here": "A 9-page website plus a local Streamlit tool; the contract reading is cached.",
+      "why": "The team chose Vercel for the showcase. A cached reading instead of a live AI call is the plan's own contingency (§5.2 cut order)."
+    },
+    {
+      "plan": "Scenario stress-testing (Q7).",
+      "here": "Natural-disaster stress test: any factory or every factory in India offline.",
+      "why": "Shows what dual sourcing protects against, using only real factory locations; no invented probabilities."
+    }
   ]
 }

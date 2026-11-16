@@ -84,7 +84,7 @@ Probation suppliers = 0.0 (plan §4.3).
   A maker's score is its worst linked letter in the last 5 years (`worst_letter` column says which).
 * Contracts: Force Majeure (0 Hormuz excluded / 0.5 balanced / 1 supplier discretion), lead time
   ((days − 30) ÷ 60), late-delivery penalty (0 weekly damages / 0.5 after 30 days / 1 none), single-source
-  (1 if the buyer is locked in). Contract risk = mean of the four. Source: zero-shot Claude extraction cached in
+  (1 if the buyer is locked in). Contract risk = mean of the four. **Demo only: not part of C4 (synthetic contracts).** Source: zero-shot Claude extraction cached in
   `reference/contract_extraction_llm.json` (plan §5.2 cut order: cached JSON instead of a live call), bound to each
   contract's SHA-256; a changed or new contract falls back to the rule extractor. A contract counts only for the company
   that signed it (Apotex does not inherit Teyro's agreement).

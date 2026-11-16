@@ -9,7 +9,7 @@ analysis-ready tables for Layer 2 (entity fusion), Layer 3 (C1–C5 engines) and
 pip install -r requirements.txt
 python run_ingestion.py                 # live run (≈2–4 min; openFDA + World Bank)
 python run_ingestion.py --offline       # replay cached API snapshots, no network (demo / audit)
-python -m pytest -q                     # 23 offline tests
+python -m pytest -q                     # 25 offline tests
 ```
 
 Optional:
@@ -116,7 +116,7 @@ and capacity; `reference/quotes_2026_carboplatin_override.csv` for real tender q
   `shap_top3_reasons` into `suppliers_matrix.csv`.
 * **Member 4B:** corpora are `warning_letters_corpus.csv` and `contracts_corpus.csv`; C4 inputs are in the matrix's
   supporting columns.
-* **Member 3:** `monthly_capacity_units` is a SCENARIO default of 4,000 until overrides are filled.
+* **Member 3:** `monthly_capacity_units` has no public source, so it is non-limiting (= demand) for every maker (docs/DECISIONS.md, item 3).
 * **Slides:** take labeler and shortage counts from the final live run, not from the plan text (see PLAN_COMPLIANCE.md).
 
 ## Layout

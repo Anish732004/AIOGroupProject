@@ -2,7 +2,7 @@
    computed (data/snapshot.json). It never recomputes a score, so its numbers match the pipeline exactly. */
 window.PS = (function () {
   'use strict';
-  const PS = { data: null, state: { mode: 'Normal', lam: 1, ent: 0, supplier: null } };
+  const PS = { data: null, state: { mode: 'Normal', lam: 1, ent: 0, supplier: null, outage: 'none' } };
 
   PS.esc = function (v) {
     return String(v === null || v === undefined ? '' : v)
@@ -65,6 +65,24 @@ window.PS = (function () {
     const s = PS.state;
     return PS.data.scenarios[PS.key(mode || s.mode, lam === undefined ? s.lam : lam, ent === undefined ? s.ent : ent)];
   };
+  /* stress test (natural disaster): same ranking, order split re-solved with some factories offline */
+  PS.outage = function (key) { return (PS.data.stress.outages || []).find(function (o) { return o.key === key; }); };
+  PS.stressed = function (key, mode, lam, ent) {
+    const base = PS.scenario(mode, lam, ent), s = PS.state;
+    key = key === undefined ? s.outage : key;
+    if (!key || key === 'none') return base;
+    const r = PS.data.stress.results[key][PS.key(mode || s.mode, lam === undefined ? s.lam : lam, ent === undefined ? s.ent : ent)];
+    return Object.assign({}, base, { vials: r.vials, spot: r.spot, spend: r.spend, status: r.status, outage: key });
+  };
+  PS.outageLabel = function (o) {
+    if (!o) return 'None';
+    if (o.kind === 'country' || o.kind === 'country_worst') {
+      const n = o.groups.length;
+      return 'Every factory in ' + o.country + ' (' + n + ' of ' + PS.data.meta.factories + ')' + (o.kind === 'country_worst' ? ', plus factories in an unknown country' : '');
+    }
+    const f = PS.factories()[o.groups[0]];
+    return f.label + (f.city ? ', ' + f.city : '') + (f.country && f.country !== 'Unknown' ? ' (' + f.country + ')' : ' (country not stated)');
+  };
   PS.suppliers = function () { return PS.data.suppliers; };
   PS.byId = function (id) { return PS.data.suppliers.find(function (x) { return x.id === id; }); };
   PS.criteria = function () { return PS.data.content.criteria; };
@@ -76,7 +94,7 @@ window.PS = (function () {
       const g = map[s.factory_group] || (map[s.factory_group] = { id: s.factory_group, names: [], country: s.country });
       g.names.push(s.name);
       g.known = !!s.factory_fei || (s.factory && s.factory.indexOf('(') !== 0);
-      g.label = (s.factory && s.factory.indexOf('(') !== 0) ? s.factory : 'Factory not named on the label';
+      g.label = (s.factory && s.factory.indexOf('(') !== 0) ? s.factory : g.names[0] + '\'s factory (not named on the label)';
       g.city = s.factory_city || '';
     });
     return map;

@@ -18,8 +18,8 @@ Demonstration SKU: **Carboplatin Injection 10 mg/mL** (Tier 1, life-critical onc
 
 ## The showcase website (Vercel)
 
-A 9-page website for any reader: seven key findings in plain words, the problem, the ranked suppliers with their reasons and evidence, a side-by-side compare view, the recommended
-order split with the one-click situations, shortage alerts with a live FDA check, the document readers, model quality,
+A 9-page website for any reader: eight key findings in plain words, the problem, the ranked suppliers with their reasons and evidence, a side-by-side compare view, the recommended
+order split with the one-click situations and a natural-disaster stress test, shortage alerts with a live FDA check, the document readers, model quality,
 the evidence behind every input, and a searchable glossary. It is static (no build step) and shows results the Python
 pipeline computed for all 234 settings a reader can choose. Deploy: import the repo in Vercel; `vercel.json` does the
 rest. Details, refresh steps and tests: [web/README.md](web/README.md).

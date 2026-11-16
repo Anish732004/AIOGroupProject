@@ -44,7 +44,10 @@ def decision_matrix(m: pd.DataFrame, mode: str) -> pd.DataFrame:
 
 
 def run(m: pd.DataFrame, tiers: pd.DataFrame, sku: pd.DataFrame, mode: str = "Normal",
-        lam: float = DEFAULT_LAMBDA, entropy_share: float = DEFAULT_ENTROPY_SHARE) -> dict:
+        lam: float = DEFAULT_LAMBDA, entropy_share: float = DEFAULT_ENTROPY_SHARE,
+        offline_factories: set | None = None) -> dict:
+    """offline_factories: stress test (natural disaster) - factory groups (source_plant_group) that cannot ship.
+    The ranking is unchanged (a disaster does not change a supplier's quality); only the order split re-solves."""
     if not 0 <= entropy_share <= 0.5:
         raise ValueError("entropy share must be between 0 and 0.5 (plan: at most 50/50)")
     if lam < 0:
@@ -73,7 +76,7 @@ def run(m: pd.DataFrame, tiers: pd.DataFrame, sku: pd.DataFrame, mode: str = "No
         "factory_group": rank["source_plant_group"].values,
         "monthly_capacity_units": rank["monthly_capacity_units"].values,
     })
-    res = allocate(alloc_in, demand, float(tier_row["max_primary_share"]), lam)
+    res = allocate(alloc_in, demand, float(tier_row["max_primary_share"]), lam, offline_factories)
     weights = pd.DataFrame({"AHP (board, this mode)": ahp_w, "Entropy (information only)": ent_w,
                             "Used for ranking": w}).round(4)
     weights.index.name = "criterion"

@@ -53,13 +53,20 @@ def solve(prob: pulp.LpProblem) -> str:
     raise RuntimeError("no MILP solver could run: " + " | ".join(errors) + " - pip install highspy")
 
 
-def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float) -> dict:
+def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float, offline: set | None = None) -> dict:
     """df: one row per rankable maker with manufacturer_id, landed_cost_usd, S, is_probation, factory_group,
-    monthly_capacity_units. Returns the allocation table and solver diagnostics."""
+    monthly_capacity_units. `offline`: factory groups that cannot ship this month (stress test: natural disaster).
+    Their makers get 0 vials; scores and caps of the other factories are unchanged. Returns allocation + diagnostics."""
     d = df.sort_values("manufacturer_id").reset_index(drop=True).copy()
-    mean_cost = float(d["landed_cost_usd"].mean())
+    offline = set(offline or ())
+    unknown = offline - set(d["factory_group"])
+    if unknown:
+        raise ValueError(f"unknown factory group(s): {sorted(unknown)}")
+    d["offline"] = d["factory_group"].isin(offline)
+    mean_cost = float(d["landed_cost_usd"].mean())             # plan 4.4: mean landed cost of the qualified makers
     groups = d.groupby("factory_group")["is_probation"].all()
-    n_established = int((~groups).sum())
+    online_groups = groups[~groups.index.isin(offline)]
+    n_established = int((~online_groups).sum())                # a factory that cannot ship does not count
     pcap = PROBATION_CAP_WITH_2_ESTABLISHED if n_established >= 2 else PROBATION_CAP_RELAXED
     d["unit_objective"] = d["landed_cost_usd"] + lam * mean_cost * (1 - d["S"])
 
@@ -67,11 +74,11 @@ def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float) -> dict
     x = {i: _var(prob, f"x_{i}", lowBound=0) for i in d.index}
     y = {i: _var(prob, f"y_{i}", cat="Binary") for i in d.index if bool(d.at[i, "is_probation"])}
     u = _var(prob, "spot_buy", lowBound=0)
-    cost = pulp.lpSum(float(d.at[i, "unit_objective"]) * x[i] for i in d.index) + BIG_M * u
-    prob += cost
+    supply_cost = pulp.lpSum(float(d.at[i, "unit_objective"]) * x[i] for i in d.index)
+    prob += supply_cost + BIG_M * u
     prob += pulp.lpSum(x.values()) + u == demand, "demand"
     for i in d.index:
-        prob += x[i] <= float(d.at[i, "monthly_capacity_units"]), f"capacity_{i}"
+        prob += x[i] <= (0.0 if d.at[i, "offline"] else float(d.at[i, "monthly_capacity_units"])), f"capacity_{i}"
         if i in y:
             prob += x[i] >= PROBATION_FLOOR * demand * y[i], f"trial_floor_{i}"
             prob += x[i] <= pcap * demand * y[i], f"trial_cap_{i}"
@@ -83,13 +90,25 @@ def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float) -> dict
     solver_name = solve(prob)
     status = prob.status
     best_cost = pulp.value(prob.objective) or 0.0
+    tie_break = "not needed"
     if pulp.LpStatus[status] == "Optimal":
-        # stage 2: keep the optimal cost, then prefer alphabetically earlier names (d is sorted by name)
-        prob += cost <= best_cost + max(1e-6, 1e-9 * abs(best_cost)), "keep_optimal_cost"
+        # stage 2: keep the optimal outcome, then prefer alphabetically earlier names (d is sorted by name).
+        # The emergency amount and the supply cost are held SEPARATELY: holding their sum is numerically fragile
+        # because the emergency penalty (1e6 per vial) dwarfs the supply cost.
+        stage1 = {i: x[i].value() or 0.0 for i in d.index}
+        u1, c1 = u.value() or 0.0, pulp.value(supply_cost) or 0.0
+        prob += u <= u1 + 1e-6, "keep_emergency_amount"
+        prob += supply_cost <= c1 + max(1e-4, 1e-7 * abs(c1)), "keep_supply_cost"
         prob.setObjective(pulp.lpSum(float(i) * x[i] for i in d.index))
         solve(prob)
-        if pulp.LpStatus[prob.status] != "Optimal":
-            raise RuntimeError(f"tie-break solve ended with status {pulp.LpStatus[prob.status]}")
+        if pulp.LpStatus[prob.status] == "Optimal":
+            tie_break = "applied"
+        else:                                    # stage 1 is already optimal: keep it, and say so
+            for i in d.index:
+                x[i].varValue = stage1[i]
+            u.varValue = u1
+            tie_break = f"not applied (second solve: {pulp.LpStatus[prob.status]}); first optimal solution kept"
+        status = 1                               # the reported result is the stage-1 optimum or an equal-cost one
 
     d["vials"] = [round(x[i].value() or 0.0, 1) for i in d.index]
     d["share_pct"] = (100 * d["vials"] / demand).round(2)
@@ -112,5 +131,7 @@ def allocate(df: pd.DataFrame, demand: int, tier_cap: float, lam: float) -> dict
             "factories_used": int((by_factory > 0.5).sum()), "makers_used": int(d["selected"].sum()),
             "largest_factory_share_pct": round(100 * float(by_factory.max()) / demand, 2),
             "objective_value": round(best_cost, 2),
+            "offline_factories": sorted(offline), "tie_break": tie_break,
+            "monthly_spend_usd": round(float((d["vials"] * d["landed_cost_usd"]).sum()), 2),
         },
     }

@@ -47,8 +47,8 @@
   function splitStats(sc) {
     const rows = PS.splitByFactory(sc), demand = PS.data.meta.demand;
     const countries = {};
-    rows.forEach(function (r) { countries[r.factory.country] = 1; });
-    return { factories: rows.length, countries: Object.keys(countries).length,
+    rows.forEach(function (r) { if (r.factory.country && r.factory.country !== 'Unknown') countries[r.factory.country] = 1; });
+    return { unknownCountry: rows.some(function (r) { return r.factory.country === 'Unknown'; }), factories: rows.length, countries: Object.keys(countries).length,
       largest: rows.length ? 100 * rows[0].vials / demand : 0, spot: sc.spot };
   }
 
@@ -113,7 +113,7 @@
 
     // 1. where the order goes
     const rows = PS.splitByFactory(sc), countries = {};
-    rows.forEach(function (r) { countries[r.factory.country] = 1; });
+    rows.forEach(function (r) { if (r.factory.country !== 'Unknown') countries[r.factory.country] = 1; });
     out.push({ title: 'The order is spread over ' + rows.length + ' independent factories in ' + Object.keys(countries).length + ' countries',
       text: rows.map(function (r) { return r.factory.label + ' (' + r.factory.country + ') ' + PS.pct(100 * r.vials / d.meta.demand); }).join(', ') +
         '. The largest share is ' + PS.pct(100 * rows[0].vials / d.meta.demand) +
@@ -165,6 +165,20 @@
       text: moved + ' of ' + d.suppliers.length + ' suppliers change rank and ' + topC.name + ' moves to first, because route exposure gains weight and cost loses it. ' +
         (PS.sameSplit(cr, sc) ? 'The recommended order stays the same, because it also weighs price and the share limits.' : 'The recommended order changes too.'),
       link: '#/split?mode=Crisis', cta: 'Try Crisis mode' });
+
+    // 5b. natural disaster in the country with most factories
+    const ctry = d.stress.outages.find(function (o) { return o.kind === 'country'; });
+    if (ctry) {
+      const hit = PS.stressed(ctry.key, 'Normal', 1, 0), worst = d.stress.outages.find(function (o) { return o.kind === 'country_worst' && o.country === ctry.country; });
+      const wr = worst ? PS.stressed(worst.key, 'Normal', 1, 0) : null, money = function (v) { return '$' + PS.num(v); };
+      out.push({ title: 'A disaster shutting every factory in ' + ctry.country + ' would ' + (hit.spot > 0.5 ? 'leave a supply gap' : 'not stop supply, but cost far more'),
+        text: ctry.groups.length + ' of the ' + d.meta.factories + ' factories are in ' + ctry.country + '. Without them ' +
+          (hit.spot > 0.5 ? PS.num(hit.spot) + ' vials need an emergency purchase and ' : 'the order is still covered, but ') +
+          'the monthly cost rises from ' + money(sc.spend) + ' to ' + money(hit.spend) + ' at official US prices.' +
+          (wr ? ' If the supplier whose factory country is unknown is also there, ' + PS.num(wr.spot) + ' vials need an emergency purchase.' : '') +
+          ' Losing any single factory, by contrast, is fully absorbed.',
+        link: '#/split?outage=' + encodeURIComponent(ctry.key), cta: 'Run the stress test' });
+    }
 
     // 6. shortages hit the recommended suppliers too
     const ordered = d.suppliers.filter(function (s, i) { return sc.vials[i] > 0.5; });
@@ -331,8 +345,9 @@
 
   /* =============================================================== ORDER SPLIT */
   V.split = function () {
-    const d = PS.data, s = PS.state, sc = PS.scenario(), st = splitStats(sc), mode = d.modes[s.mode], crit = PS.criteria();
+    const d = PS.data, s = PS.state, sc = PS.stressed(), st = splitStats(sc), mode = d.modes[s.mode], crit = PS.criteria();
     const notes = [];
+    if (s.outage && s.outage !== 'none') notes.push(disasterNote(s.outage));
     if (sc.spot > 0.5) notes.push(PS.banner('crit', 'alert', '<strong>Emergency purchase needed.</strong> The approved suppliers cannot cover ' + PS.num(sc.spot) + ' vials under the rules.'));
     if (s.lam === 0) notes.push(PS.banner('warn', 'warn', '<strong>The risk dial is at 0, so the split ignores risk.</strong> All generic suppliers cost the same, so the choice among them is simply alphabetical. Raise the dial to let the ranking guide the order.'));
     if (s.mode !== 'Normal') {
@@ -349,6 +364,7 @@
       d.suppliers.forEach(function (sp, i) { facV[sp.factory_group] = (facV[sp.factory_group] || 0) + sc.vials[i]; });
       d.suppliers.forEach(function (sp, i) {
         if (sc.rank[i] !== 1 || facV[sp.factory_group] > 0.5) return;
+        if (sc.outage && PS.outage(sc.outage).groups.indexOf(sp.factory_group) >= 0) return;   // explained by the disaster note
         notes.push(PS.banner('warn', 'warn', sp.price_usd > 2 * med
           ? '<strong>' + e(sp.name) + ' ranks first but receives no order.</strong> At $' + PS.num(sp.price_usd) + ' per vial it costs about ' + Math.round(sp.price_usd / med) +
             ' times the other suppliers ($' + PS.num(med, 2) + '). The ranking in this situation gives cost little or no weight, but the order split still weighs price.'
@@ -379,8 +395,9 @@
 
     return head('Order split', 'How to split this month\'s order',
       'The split spreads ' + PS.num(d.meta.demand) + ' vials across independent factories, favouring higher-ranked suppliers while obeying the plan\'s share limits. Change the situation or the risk dial above to see it respond.') +
+      stressPicker() +
       '<div class="stack">' + notes.join('') + '</div>' +
-      '<div class="section grid g4">' + tile('Factories in the order', st.factories) + tile('Countries', st.countries) +
+      '<div class="section grid g4">' + tile('Factories in the order', st.factories) + tile('Countries', st.countries, st.unknownCountry ? 'plus one factory whose country is not stated' : '') +
       tile('Largest single factory', PS.pct(st.largest)) + tile('Emergency purchase', PS.num(st.spot) + ' vials', 'outside the approved suppliers') + '</div>' +
       '<div class="section grid g-main"><div class="card"><h3>Recommended split, by factory</h3><p class="sub">Several names on the box can be one factory, so limits apply to the factory.</p>' + splitList(sc, d.meta.demand) + '</div>' +
       '<div class="card"><h3>What counts, and how much</h3><p class="sub">The weights behind the ranking in this situation.</p>' + weights +
@@ -399,6 +416,37 @@
       '<div class="card" id="audit-box"><h3>Approval log</h3><p class="sub muted">Loading…</p></div></div></section>';
   };
 
+  function stressPicker() {
+    const s = PS.state, opts = PS.data.stress.outages.filter(function (o) { return o.kind !== 'country_worst'; });
+    return '<div class="card" style="margin-bottom:16px"><h3>Stress test: a natural disaster</h3>' +
+      '<p class="sub">A flood, cyclone or earthquake can shut a factory or a whole region. Choose what goes offline; the order split re-solves. Supplier scores do not change, because a disaster says nothing about quality.</p>' +
+      '<label class="f" style="max-width:560px">What goes offline<select id="outage" class="sel"><option value="none"' + (s.outage === 'none' ? ' selected' : '') + '>Nothing (no disaster)</option>' +
+      opts.map(function (o) { return '<option value="' + e(o.key) + '"' + (o.key === s.outage ? ' selected' : '') + '>' + e(PS.outageLabel(o)) + '</option>'; }).join('') +
+      '</select></label></div>';
+  }
+  function disasterNote(key) {
+    const d = PS.data, o = PS.outage(key), base = PS.scenario(), hit = PS.stressed(key), fac = PS.factories();
+    const tot = function (sc) { const t = {}; d.suppliers.forEach(function (sp, i) { t[sp.factory_group] = (t[sp.factory_group] || 0) + sc.vials[i]; }); return t; };
+    const b = tot(base), h = tot(hit);
+    const gained = Object.keys(h).filter(function (g) { return h[g] > (b[g] || 0) + 0.5; }).map(function (g) { return fac[g].label + ' (+' + PS.num(h[g] - (b[g] || 0)) + ' vials)'; });
+    const lost = Object.keys(b).filter(function (g) { return b[g] > 0.5 && o.groups.indexOf(g) >= 0; }).map(function (g) { return fac[g].label; });
+    const money = function (v) { return '$' + PS.num(v); };
+    const cost = Math.abs(hit.spend - base.spend) < 1 ? 'The monthly cost does not change' :
+      'The monthly cost of the order rises from ' + money(base.spend) + ' to ' + money(hit.spend) + ' (' + (hit.spend / base.spend).toFixed(1) + ' times)';
+    let html = '<strong>' + e(PS.outageLabel(o)) + ' offline.</strong> ' +
+      (lost.length ? 'The recommended order loses ' + e(lost.join(', ')) + '. ' : 'None of these factories was in the recommended order. ') +
+      (gained.length ? 'Taking over: ' + e(gained.join(', ')) + '. ' : '') +
+      (hit.spot > 0.5 ? '<strong>' + PS.num(hit.spot) + ' vials cannot be supplied by any approved supplier</strong> and must be bought in an emergency. ' : 'The order is still fully covered by approved suppliers. ') +
+      cost + ', at official US prices (a stand-in for tender prices).';
+    const worst = d.stress.outages.find(function (x) { return x.kind === 'country_worst' && x.country === o.country; });
+    if (o.kind === 'country' && worst) {
+      const wr = PS.stressed(worst.key), unk = worst.groups.filter(function (g) { return o.groups.indexOf(g) < 0; }).map(function (g) { return fac[g].names.join(', '); });
+      html += '<br><br><strong>Caveat:</strong> ' + e(unk.join(', ')) + ' does not state its factory\'s country, so it is not taken offline here. If its factory is also in ' + e(o.country) + ': ' +
+        (wr.spot > 0.5 ? PS.num(wr.spot) + ' vials must be bought in an emergency' : 'the order is still covered') + ' and the monthly cost becomes ' + money(wr.spend) + '.';
+    }
+    return PS.banner(hit.spot > 0.5 ? 'crit' : 'warn', hit.spot > 0.5 ? 'alert' : 'warn', html);
+  }
+
   V.auditBox = function (rows, check) {
     if (!rows.length) return '<h3>Approval log</h3><p class="sub">No approvals yet in this browser.</p>';
     return '<h3>Approval log</h3><div style="margin:8px 0 12px">' + PS.banner(check.ok ? 'good' : 'crit', check.ok ? 'good' : 'alert',
@@ -406,7 +454,7 @@
       '<div class="table-wrap"><table><thead><tr><th>#</th><th>When (UTC)</th><th>Who</th><th>Decision</th><th>Situation</th><th>Fingerprint</th></tr></thead><tbody>' +
       rows.slice().reverse().map(function (r) {
         return '<tr><td class="num">' + r.seq + '</td><td class="nowrap">' + e(String(r.timestamp_utc).replace('T', ' ').replace('Z', '')) + '</td><td>' + e(r.approver) + '</td><td>' + e(r.decision) +
-          (r.reason ? '<span class="cellsub">' + e(r.reason) + '</span>' : '') + '</td><td>' + e(r.mode) + '<span class="cellsub">risk dial ' + e(r.risk_dial) + '</span></td><td class="mono">' + e(String(r.record_hash).slice(0, 12)) + '…</td></tr>';
+          (r.reason ? '<span class="cellsub">' + e(r.reason) + '</span>' : '') + '</td><td>' + e(r.mode) + '<span class="cellsub">risk dial ' + e(r.risk_dial) + (r.stress_test && r.stress_test !== 'none' ? ' · stress test: ' + e(r.stress_test) : '') + '</span></td><td class="mono">' + e(String(r.record_hash).slice(0, 12)) + '…</td></tr>';
       }).join('') + '</tbody></table></div><p style="margin-top:12px"><button class="btn small-btn" type="button" id="audit-download">Download the log</button></p>';
   };
 
@@ -523,6 +571,10 @@
       c.evidence_ledger.map(function (r) {
         return '<tr><td><strong>' + e(r.input) + '</strong></td><td>' + e(r.feeds) + '</td><td>' + PS.badge('level-' + r.level, lv[r.level].label, icon[r.level]) + '</td><td>' + e(r.source) + '</td><td class="ink2">' + e(r.note) + '</td></tr>';
       }).join('') + '</tbody></table></div></section>' +
+      '<section class="section"><h2>Where this differs from the project plan, and why</h2><p class="sub">Every deliberate difference, so the plan, this site and the slides never silently disagree.</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>The plan says</th><th>This prototype</th><th>Why</th></tr></thead><tbody>' +
+      c.plan_differences.map(function (r) { return '<tr><td>' + e(r.plan) + '</td><td><strong>' + e(r.here) + '</strong></td><td class="ink2">' + e(r.why) + '</td></tr>'; }).join('') +
+      '</tbody></table></div></section>' +
       '<div class="section grid g2"><div class="card"><h3>Known limits</h3><p class="sub">What this prototype cannot claim.</p><ul class="ink2" style="margin:0;padding-left:18px">' +
       c.limits.map(function (l) { return '<li style="margin-bottom:8px">' + e(l) + '</li>'; }).join('') + '</ul></div>' +
       '<div class="card"><h3>How it is governed</h3><p class="sub">The rules the system follows.</p><dl class="stack" style="gap:10px;margin:0">' +
