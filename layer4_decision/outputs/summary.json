@@ -1,0 +1,165 @@
+{
+  "lambda": 1.0,
+  "entropy_share": 0.0,
+  "modes": {
+    "Normal": {
+      "weights_used": {
+        "C1_landed_cost": 0.1,
+        "C2_delivery_risk": 0.3,
+        "C3_price_integrity": 0.05,
+        "C4_compliance_risk": 0.3,
+        "C5_route_exposure": 0.25
+      },
+      "ranking": {
+        "BPI LABS": 1,
+        "GLAND PHARMA": 1,
+        "APOTEX": 3,
+        "NATCO PHARMA USA": 3,
+        "TEYRO LABS": 3,
+        "AVYXA PHARMA": 6,
+        "TEVA PARENTERAL MEDICINES": 7,
+        "HOSPIRA": 8,
+        "EUGIA US": 9,
+        "FRESENIUS KABI USA": 9,
+        "ACCORD HEALTHCARE": 11
+      },
+      "allocation_vials": {
+        "BPI LABS": 3000.0,
+        "APOTEX": 3000.0,
+        "TEVA PARENTERAL MEDICINES": 3000.0,
+        "HOSPIRA": 1000.0,
+        "GLAND PHARMA": 0.0,
+        "NATCO PHARMA USA": 0.0,
+        "TEYRO LABS": 0.0,
+        "AVYXA PHARMA": 0.0,
+        "EUGIA US": 0.0,
+        "FRESENIUS KABI USA": 0.0,
+        "ACCORD HEALTHCARE": 0.0
+      },
+      "solver_status": "Optimal",
+      "solver": "HiGHS",
+      "demand": 10000,
+      "spot_buy_vials": 0.0,
+      "lambda": 1.0,
+      "mean_cost_usd": 239.5462,
+      "tier_cap": 0.7,
+      "established_factories": 0,
+      "probation_cap_used": 0.3,
+      "factories_used": 4,
+      "makers_used": 4,
+      "largest_factory_share_pct": 30.0,
+      "objective_value": 1052121.81
+    },
+    "Crisis": {
+      "weights_used": {
+        "C1_landed_cost": 0.0,
+        "C2_delivery_risk": 0.3,
+        "C3_price_integrity": 0.05,
+        "C4_compliance_risk": 0.3,
+        "C5_route_exposure": 0.35
+      },
+      "ranking": {
+        "AVYXA PHARMA": 1,
+        "BPI LABS": 2,
+        "GLAND PHARMA": 2,
+        "APOTEX": 4,
+        "NATCO PHARMA USA": 4,
+        "TEYRO LABS": 4,
+        "TEVA PARENTERAL MEDICINES": 7,
+        "HOSPIRA": 8,
+        "EUGIA US": 9,
+        "FRESENIUS KABI USA": 9,
+        "ACCORD HEALTHCARE": 11
+      },
+      "allocation_vials": {
+        "BPI LABS": 3000.0,
+        "APOTEX": 3000.0,
+        "TEVA PARENTERAL MEDICINES": 3000.0,
+        "HOSPIRA": 1000.0,
+        "AVYXA PHARMA": 0.0,
+        "GLAND PHARMA": 0.0,
+        "NATCO PHARMA USA": 0.0,
+        "TEYRO LABS": 0.0,
+        "EUGIA US": 0.0,
+        "FRESENIUS KABI USA": 0.0,
+        "ACCORD HEALTHCARE": -0.0
+      },
+      "solver_status": "Optimal",
+      "solver": "HiGHS",
+      "demand": 10000,
+      "spot_buy_vials": 0.0,
+      "lambda": 1.0,
+      "mean_cost_usd": 239.5462,
+      "tier_cap": 0.7,
+      "established_factories": 0,
+      "probation_cap_used": 0.3,
+      "factories_used": 4,
+      "makers_used": 4,
+      "largest_factory_share_pct": 30.0,
+      "objective_value": 1156636.3
+    },
+    "Cost Focus": {
+      "weights_used": {
+        "C1_landed_cost": 0.2,
+        "C2_delivery_risk": 0.3,
+        "C3_price_integrity": 0.05,
+        "C4_compliance_risk": 0.3,
+        "C5_route_exposure": 0.15
+      },
+      "ranking": {
+        "BPI LABS": 1,
+        "GLAND PHARMA": 1,
+        "APOTEX": 3,
+        "NATCO PHARMA USA": 3,
+        "TEYRO LABS": 3,
+        "TEVA PARENTERAL MEDICINES": 6,
+        "HOSPIRA": 7,
+        "EUGIA US": 8,
+        "FRESENIUS KABI USA": 8,
+        "AVYXA PHARMA": 10,
+        "ACCORD HEALTHCARE": 11
+      },
+      "allocation_vials": {
+        "BPI LABS": 3000.0,
+        "APOTEX": 3000.0,
+        "TEVA PARENTERAL MEDICINES": 3000.0,
+        "HOSPIRA": 1000.0,
+        "GLAND PHARMA": 0.0,
+        "NATCO PHARMA USA": 0.0,
+        "TEYRO LABS": 0.0,
+        "EUGIA US": 0.0,
+        "FRESENIUS KABI USA": 0.0,
+        "AVYXA PHARMA": 0.0,
+        "ACCORD HEALTHCARE": 0.0
+      },
+      "solver_status": "Optimal",
+      "solver": "HiGHS",
+      "demand": 10000,
+      "spot_buy_vials": 0.0,
+      "lambda": 1.0,
+      "mean_cost_usd": 239.5462,
+      "tier_cap": 0.7,
+      "established_factories": 0,
+      "probation_cap_used": 0.3,
+      "factories_used": 4,
+      "makers_used": 4,
+      "largest_factory_share_pct": 30.0,
+      "objective_value": 893295.97
+    }
+  },
+  "ahp_consistency": {
+    "weights_from_implied_matrix": {
+      "C1_landed_cost": 0.1,
+      "C2_delivery_risk": 0.3,
+      "C3_price_integrity": 0.05,
+      "C4_compliance_risk": 0.3,
+      "C5_route_exposure": 0.25
+    },
+    "lambda_max": 5.0,
+    "CI": 0.0,
+    "RI": 1.12,
+    "CR": 0.0,
+    "consistent (CR < 0.10)": true,
+    "note": "pairwise matrix implied by the plan's tier weights (no team survey supplied)"
+  }
+}

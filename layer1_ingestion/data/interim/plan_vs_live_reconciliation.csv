@@ -1,0 +1,7 @@
+item,plan_figure,this_run,note,status
+SCMS shipments in training layer,"~10,300",10316,"raw file has 10,324 lines; rejected rows are in data/quarantine",matches
+Carboplatin labelers in openFDA NDC directory,18,18,"11 hold a finished-injection listing, 7 are bulk-API only",matches
+Carboplatin shortage records (openFDA),35,35,after keeping the latest status row per company + package,matches
+Active oncology shortages,84,84,8 distinct molecules; the plan does not say whether 84 counts records or molecules,matches
+FDA CGMP warning letters collected,50-100,50,51 URLs shipped,matches
+Manufacturers in suppliers_matrix.csv,18,18,one row per manufacturer x SKU,matches

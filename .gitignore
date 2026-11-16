@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.env
+.DS_Store
+.ipynb_checkpoints/
+
+# generated data: a SNAPSHOT of the computed results is committed (team decision, 15 Nov 2026) so the deployed
+# cockpit works and every teammate sees the same numbers. Audit logs (approver initials) are never committed.
+/data/*
+!/data/processed/
+/data/audit/
+
+# large public FDA export - each teammate downloads their own (see layer1_ingestion/README.md)
+/layer1_ingestion/data/manual/fda_inspections/*.xlsx
+/layer1_ingestion/data/manual/fda_inspections/*.xls
+
+# Layer 3 / Layer 4 outputs are part of the committed snapshot (re-run the engines to refresh them)
+*Implementation Plan.pdf

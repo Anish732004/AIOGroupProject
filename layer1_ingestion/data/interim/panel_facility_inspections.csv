@@ -1,0 +1,34 @@
+labeler_key,fei_number,legal_name,country,n_classifications,oai_5yr,vai_5yr,nai_5yr,last_inspection_end_date,worst_classification,match_method
+ACCORD HEALTHCARE,3004011473,Intas Pharmaceuticals Limited,India,1,1,0,0,2022-12-02,OAI,fda_factory_number
+APOTEX,3021389808,Teyro Labs Private Limited,India,1,0,1,0,2025-11-12,VAI,fda_factory_number
+BPI LABS,3009056604,Gland Pharma Limited,India,1,0,0,1,2023-07-28,NAI,fda_factory_number
+CIPLA,3002806691,Cipla Limited,India,1,0,1,0,2024-11-13,VAI,exact_normalised_name
+CIPLA,3002806702,"Cipla, Ltd.",India,1,0,1,0,2024-05-08,VAI,exact_normalised_name
+CIPLA,3002806710,Cipla Limited,India,1,0,1,0,2024-04-04,VAI,exact_normalised_name
+CIPLA,3004081307,Cipla Limited,India,2,1,1,0,2024-06-21,OAI,exact_normalised_name
+CIPLA,3005857289,Cipla Ltd.,India,1,0,1,0,2025-05-30,VAI,exact_normalised_name
+CIPLA,3008581988,Cipla Limited,India,1,1,0,0,2023-02-17,OAI,exact_normalised_name
+EUGIA US,3011960448,EUGIA Pharma Specialities Limited,India,2,0,1,1,2023-07-26,VAI,fda_factory_number
+GLAND PHARMA,3009056604,Gland Pharma Limited,India,1,0,0,1,2023-07-28,NAI,fda_factory_number
+HERAEUS PRECIOUS METALS AND,3002808476,Heraeus Precious Metals GmbH & Co. KG,Germany,1,0,1,0,2022-08-05,VAI,exact_normalised_name
+HETERO LABS,3003510514,Hetero Drugs Limited,India,1,0,1,0,2025-05-16,VAI,core_name_contained
+HETERO LABS,3004378446,Hetero Labs Limited,India,1,0,1,0,2023-09-08,VAI,exact_normalised_name
+HETERO LABS,3005406526,Hetero Labs Limited - Unit III,India,1,0,1,0,2023-07-21,VAI,core_name_contained
+HETERO LABS,3008294355,Hetero Labs Ltd. Unit VI,India,2,0,2,0,2026-06-26,VAI,core_name_contained
+HETERO LABS,3008307735,Hetero Labs Limited (Unit V),India,1,0,1,0,2022-08-12,VAI,exact_normalised_name
+HETERO LABS,3009093782,Hetero Labs Ltd. - Unit IX,India,1,0,1,0,2022-11-08,VAI,core_name_contained
+HETERO LABS,3009225386,Hetero Drugs Limited,India,1,0,1,0,2022-06-21,VAI,core_name_contained
+HETERO LABS,3009307611,Hetero Drugs Limited,India,1,0,0,1,2023-01-27,NAI,core_name_contained
+HETERO LABS,3022837118,"Hetero Labs Limited, Vemagal",India,1,0,0,1,2025-01-31,NAI,core_name_contained
+HOSPIRA,3001174929,Hospira Australia Pty Ltd.,Australia,1,0,1,0,2022-09-02,VAI,fda_factory_number
+NATCO PHARMA USA,3021389808,Teyro Labs Private Limited,India,1,0,1,0,2025-11-12,VAI,fda_factory_number
+SICOR DE MEXICO DE C V,3002808102,Sicor de Mexico S.A. de C.V.,Mexico,2,0,2,0,2026-06-16,VAI,exact_normalised_name
+SUN PHARMACEUTICAL INDUSTRIES,3002807979,Sun Pharmaceutical Industries Limited,India,1,1,0,0,2022-08-12,OAI,exact_normalised_name
+SUN PHARMACEUTICAL INDUSTRIES,3002809586,Sun Pharmaceutical Industries Ltd.,India,2,2,0,0,2025-06-13,OAI,exact_normalised_name
+SUN PHARMACEUTICAL INDUSTRIES,3003227153,Sun Pharmaceutical Industries Limited,India,1,0,0,1,2026-09-11,NAI,exact_normalised_name
+SUN PHARMACEUTICAL INDUSTRIES,3003952717,Sun Pharmaceutical Industries Ltd.,India,1,0,0,1,2025-06-13,NAI,exact_normalised_name
+SUN PHARMACEUTICAL INDUSTRIES,3004520113,Sun Pharmaceutical Industries Ltd,India,1,0,1,0,2026-02-06,VAI,exact_normalised_name
+SUN PHARMACEUTICAL INDUSTRIES,3010027135,Sun Pharmaceutical Industries Ltd,India,1,0,1,0,2024-05-17,VAI,exact_normalised_name
+TEVA PARENTERAL MEDICINES,3002807910,Pharmachemie B.V.,Netherlands,1,0,1,0,2024-10-17,VAI,fda_factory_number
+TEYRO LABS,3021389808,Teyro Labs Private Limited,India,1,0,1,0,2025-11-12,VAI,fda_factory_number
+UMICORE AGRENTINA,3009867894,Umicore Argentina S.A.,Argentina,1,1,0,0,2026-06-09,OAI,rapidfuzz_token_sort_ratio

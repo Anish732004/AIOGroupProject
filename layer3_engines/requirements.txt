@@ -1,0 +1,5 @@
+pandas>=2.1
+numpy>=1.24
+xgboost>=2.0        # C2 delivery-risk model + exact TreeSHAP (pred_contribs)
+scikit-learn>=1.3   # C2 baseline, C3 IsolationForest, C4 TF-IDF + LogisticRegression
+pytest>=8.0

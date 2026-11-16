@@ -1,0 +1,19 @@
+manufacturer_id,C3_price_integrity,c3_basis,c3_linked_lines,c3_scored_lines,c3_flagged_lines
+ACCORD HEALTHCARE,0.0,probation default 0.0 (plan 4.3),0,0,0
+APOTEX,0.0,probation default 0.0 (plan 4.3),0,0,0
+AVYXA PHARMA,0.0,probation default 0.0 (plan 4.3),0,0,0
+BPI LABS,0.0,probation default 0.0 (plan 4.3),0,0,0
+CIPLA,0.0209,isolation_forest_share_of_flagged_lines,773,669,14
+EUGIA US,0.0,probation default 0.0 (plan 4.3),0,0,0
+FRESENIUS KABI USA,0.0,probation default 0.0 (plan 4.3),0,0,0
+GLAND PHARMA,0.0,probation default 0.0 (plan 4.3),2,0,0
+HERAEUS PRECIOUS METALS AND,0.0,probation default 0.0 (plan 4.3),0,0,0
+HETERO LABS,0.0197,isolation_forest_share_of_flagged_lines,912,812,16
+HOSPIRA,0.0,probation default 0.0 (plan 4.3),0,0,0
+NATCO PHARMA USA,0.0,probation default 0.0 (plan 4.3),0,0,0
+SICOR DE MEXICO DE C V,0.0,probation default 0.0 (plan 4.3),0,0,0
+SUN PHARMACEUTICAL INDUSTRIES,0.1111,isolation_forest_share_of_flagged_lines,9,9,1
+TEVA PARENTERAL MEDICINES,0.0,probation default 0.0 (plan 4.3),0,0,0
+TEYRO LABS,0.0,probation default 0.0 (plan 4.3),0,0,0
+UMICORE AGRENTINA,0.0,probation default 0.0 (plan 4.3),0,0,0
+VERANOVA L P,0.0,probation default 0.0 (plan 4.3),0,0,0

@@ -1,0 +1,45 @@
+{
+  "model": "IsolationForest(contamination=0.05, random_state=42) per product group",
+  "features": [
+    "unit_price",
+    "freight_to_value_ratio",
+    "line_item_value"
+  ],
+  "lines_total": 10316,
+  "lines_scored": 8436,
+  "lines_flagged": 422,
+  "unscored_reasons": {
+    "missing_or_zero_price_or_freight": 1836,
+    "product_group_too_small(<50)": 44
+  },
+  "product_groups": [
+    {
+      "product_group": "ACT",
+      "lines": 16,
+      "modelled": false
+    },
+    {
+      "product_group": "ANTM",
+      "lines": 22,
+      "modelled": false
+    },
+    {
+      "product_group": "ARV",
+      "lines": 6946,
+      "modelled": true,
+      "flagged": 348
+    },
+    {
+      "product_group": "HRDT",
+      "lines": 1490,
+      "modelled": true,
+      "flagged": 74
+    },
+    {
+      "product_group": "MRDT",
+      "lines": 6,
+      "modelled": false
+    }
+  ],
+  "panel_makers_with_model_based_c3": 3
+}

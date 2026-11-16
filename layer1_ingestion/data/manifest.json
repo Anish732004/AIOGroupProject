@@ -1,0 +1,138 @@
+{
+  "run_at_utc": "2026-11-15T18:09:04Z",
+  "as_of": "2026-11-15",
+  "offline": true,
+  "python": "3.11.9",
+  "sku": {
+    "sku_id": "CARBOPLATIN_INJ_10MG_ML",
+    "molecule": "CARBOPLATIN",
+    "concentration_mg_per_ml": 10.0,
+    "criticality_tier": 1,
+    "reference_vial_mg": 450,
+    "therapeutic_category": "Oncology",
+    "panel_scope": "all_ndc_labelers",
+    "fuzzy_match_threshold": 88,
+    "manual_check_top_n": 20,
+    "monthly_demand_units": 10000,
+    "vial_gross_weight_kg": 0.12,
+    "panel_inco_term": "DDP"
+  },
+  "http_calls": 0,
+  "cache_replays": 18,
+  "timings_s": {
+    "scms": 0.7,
+    "ghsc_psm": 0.0,
+    "internal": 0.0,
+    "openfda": 0.5,
+    "inspections": 10.7,
+    "worldbank": 0.0,
+    "documents": 0.6,
+    "scenario": 0.6
+  },
+  "quarantined_rows": {
+    "scms": 8,
+    "openfda_ndc": 7,
+    "openfda_recalls": 1,
+    "fda_inspections": 38,
+    "worldbank": 24,
+    "warning_letters": 1
+  },
+  "outputs": {
+    "scms_shipments_clean": {
+      "path": "data/interim/scms_shipments_clean.csv",
+      "sha256": "2868d39e0406b8eee002bbe270ddd0b7d0c97f8717e4dec656cbd01fda8122c9"
+    },
+    "scms_site_features_train": {
+      "path": "data/interim/scms_site_features_train.csv",
+      "sha256": "d0de7bbe13665160e5c04efb0ac10215772701c5cb9b74c2a0f8fb42dd9950e7"
+    },
+    "scms_country_priors_train": {
+      "path": "data/interim/scms_country_priors_train.csv",
+      "sha256": "290d7b37297b3505fb32458c84425f9f393834ba82f444c83f1caf9263a417fb"
+    },
+    "scms_corridor_features_train": {
+      "path": "data/interim/scms_corridor_features_train.csv",
+      "sha256": "82ee2fb3daaa249a38c88ff5ef7975089deaaff9342e3c0526e7458453b040b2"
+    },
+    "fda_ndc_products": {
+      "path": "data/interim/fda_ndc_products.csv",
+      "sha256": "57948b4c29c49bbada64e2c93b39312b11055c5770806885a5b75b511d7bd6ec"
+    },
+    "fda_ndc_qualified_labelers": {
+      "path": "data/interim/fda_ndc_qualified_labelers.csv",
+      "sha256": "00abaa4908dc7f7c83b8e0d482dbd0b350edb6586d9f2d1f22ed3851cc330fda"
+    },
+    "fda_label_manufacturing_sites": {
+      "path": "data/interim/fda_label_manufacturing_sites.csv",
+      "sha256": "295847ae1025e604145ab9411aaa304d2b13663c0d525102bd5e3a43e0427c67"
+    },
+    "fda_recalls_5yr": {
+      "path": "data/interim/fda_recalls_5yr.csv",
+      "sha256": "19b02a229c4d7a4664351ca3b85cd63fdb7133001ca1f428ea7b5342b8a80f9b"
+    },
+    "fda_shortages_sku": {
+      "path": "data/interim/fda_shortages_sku.csv",
+      "sha256": "a4e2845e85a53150a88de4aaa8bfffd10bcba9df11d7d1a5dbca38e987d9a256"
+    },
+    "fda_shortages_oncology_current": {
+      "path": "data/interim/fda_shortages_oncology_current.csv",
+      "sha256": "c2295fb37fd59eeaa8a6b0db9da2f8b3be90462b4c2aa3cafc09dac66e61fc18"
+    },
+    "fda_inspections_drugs_5yr": {
+      "path": "data/interim/fda_inspections_drugs_5yr.csv",
+      "sha256": "9c0faad17146c3cae0ac233dac1b4af38466ee5f6bf24b5cac6581a5094fe05a"
+    },
+    "wb_country_indicators": {
+      "path": "data/interim/wb_country_indicators.csv",
+      "sha256": "7edaf198ea08a9d59296d7b60d9e445a3742bcbb1dd39b19ef4d972504dddc9b"
+    },
+    "warning_letters_corpus": {
+      "path": "data/interim/warning_letters_corpus.csv",
+      "sha256": "d0a3c59ac316cfc8693678452a73e42f33dfb6961048c0ca7708e85dfa5ffaeb"
+    },
+    "contracts_corpus": {
+      "path": "data/interim/contracts_corpus.csv",
+      "sha256": "349a58498da577a95bbdb53f26d9d5c5a5bd9c3d29eb71b10e922d2e49b0399a"
+    },
+    "quotes_2026_carboplatin": {
+      "path": "data/interim/quotes_2026_carboplatin.csv",
+      "sha256": "625124aa67ae50b29f28adcd3852600a89132c44d782681308ac36721ef3cbf3"
+    },
+    "scenario_corridors_validated": {
+      "path": "data/interim/scenario_corridors_validated.csv",
+      "sha256": "95a3bff2fe116f9f6a9403dd96e6fd397f4c6ef9c4f1d25ae76ded333ae1bf31"
+    },
+    "layer1_scoring_panel_seed": {
+      "path": "data/interim/layer1_scoring_panel_seed.csv",
+      "sha256": "80dc2d5e1a84f822fc280ae0d51af631c9a4bde726242dbebfe17ec683a734cd"
+    },
+    "entity_match_candidates": {
+      "path": "data/interim/entity_match_candidates.csv",
+      "sha256": "817c9ec4fa618e620eeb048c22aa1b85b38e9b08eb0aa4d89eb8314a73dfd7e0"
+    },
+    "entity_match_top20_manual_check": {
+      "path": "data/interim/entity_match_top20_manual_check.csv",
+      "sha256": "953973410e1f38b12197022dee0712ae7c52ac657a7b862ffd91af3f8f380f2a"
+    },
+    "panel_facility_inspections": {
+      "path": "data/interim/panel_facility_inspections.csv",
+      "sha256": "4d5373f4834a8075b880b0417018615c894473bbff17ca2bb74561dd1ea2b353"
+    },
+    "panel_inference_features": {
+      "path": "data/interim/panel_inference_features.csv",
+      "sha256": "2af3af778586a1ec21c0730fc79f8ef7339ff02532ed8815dea94a300d1ad6ec"
+    },
+    "suppliers_matrix": {
+      "path": "../data/processed/suppliers_matrix.csv",
+      "sha256": "4eb601e6c7ecc469dd339e6c4a0bbd4f119357d21efd5f750085761d12757bf5"
+    },
+    "quotes_2026_carboplatin_processed": {
+      "path": "../data/processed/quotes_2026_carboplatin.csv",
+      "sha256": "625124aa67ae50b29f28adcd3852600a89132c44d782681308ac36721ef3cbf3"
+    },
+    "plan_vs_live_reconciliation": {
+      "path": "data/interim/plan_vs_live_reconciliation.csv",
+      "sha256": "bb45827c6467655e4eddb68b3e0f7040b795930828e9e1fce080f0986309f06f"
+    }
+  }
+}

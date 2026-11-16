@@ -1,0 +1,151 @@
+{
+  "train_rows": 7771,
+  "test_rows": 2545,
+  "train_late_rate": 0.1068,
+  "test_late_rate": 0.1399,
+  "split": "train: scheduled <= 2013; test: 2014-2015 (out-of-time)",
+  "xgboost_params_chosen": {
+    "max_depth": 3,
+    "n_estimators": 600,
+    "learning_rate": 0.02,
+    "min_child_weight": 20
+  },
+  "param_grid (fit<=2012, validate 2013, by ROC-AUC)": [
+    {
+      "max_depth": 4,
+      "n_estimators": 400,
+      "learning_rate": 0.05,
+      "min_child_weight": 5,
+      "roc_auc": 0.6857,
+      "recall_late": 0.4386,
+      "precision_late": 0.2625,
+      "f2_late": 0.3867
+    },
+    {
+      "max_depth": 3,
+      "n_estimators": 300,
+      "learning_rate": 0.05,
+      "min_child_weight": 10,
+      "roc_auc": 0.6911,
+      "recall_late": 0.5877,
+      "precision_late": 0.2713,
+      "f2_late": 0.4765
+    },
+    {
+      "max_depth": 2,
+      "n_estimators": 300,
+      "learning_rate": 0.05,
+      "min_child_weight": 10,
+      "roc_auc": 0.6936,
+      "recall_late": 0.6623,
+      "precision_late": 0.2781,
+      "f2_late": 0.5189
+    },
+    {
+      "max_depth": 3,
+      "n_estimators": 600,
+      "learning_rate": 0.02,
+      "min_child_weight": 20,
+      "roc_auc": 0.694,
+      "recall_late": 0.6096,
+      "precision_late": 0.2742,
+      "f2_late": 0.4898
+    }
+  ],
+  "scale_pos_weight_chosen": 19.6,
+  "scale_pos_weight_grid (fit<=2012, validate 2013, by F2)": [
+    {
+      "scale_pos_weight": 1.0,
+      "roc_auc": 0.6792,
+      "recall_late": 0.0,
+      "precision_late": 0.0,
+      "f2_late": 0.0
+    },
+    {
+      "scale_pos_weight": 4.9,
+      "roc_auc": 0.6895,
+      "recall_late": 0.1711,
+      "precision_late": 0.2549,
+      "f2_late": 0.1831
+    },
+    {
+      "scale_pos_weight": 9.8,
+      "roc_auc": 0.6934,
+      "recall_late": 0.6053,
+      "precision_late": 0.2738,
+      "f2_late": 0.4873
+    },
+    {
+      "scale_pos_weight": 14.7,
+      "roc_auc": 0.693,
+      "recall_late": 0.8465,
+      "precision_late": 0.2805,
+      "f2_late": 0.6031
+    },
+    {
+      "scale_pos_weight": 19.6,
+      "roc_auc": 0.6937,
+      "recall_late": 0.8991,
+      "precision_late": 0.2708,
+      "f2_late": 0.6141
+    }
+  ],
+  "xgboost_test": {
+    "roc_auc": 0.7975,
+    "pr_auc": 0.3238,
+    "recall_late": 0.9185,
+    "precision_late": 0.2012,
+    "f1_late": 0.3301,
+    "f2_late": 0.5362,
+    "confusion_matrix": {
+      "tn": 891,
+      "fp": 1298,
+      "fn": 29,
+      "tp": 327
+    },
+    "threshold": 0.5
+  },
+  "logistic_regression_test": {
+    "roc_auc": 0.7856,
+    "pr_auc": 0.3035,
+    "recall_late": 0.8596,
+    "precision_late": 0.2868,
+    "f1_late": 0.4301,
+    "f2_late": 0.6142,
+    "confusion_matrix": {
+      "tn": 1428,
+      "fp": 761,
+      "fn": 50,
+      "tp": 306
+    },
+    "threshold": 0.5
+  },
+  "xgboost_beats_baseline_on_roc_auc": true,
+  "global_feature_importance_mean_abs_shap": {
+    "Delivery terms (Incoterm)": 0.5521,
+    "Freight-to-value ratio": 0.3735,
+    "Shipment weight": 0.3258,
+    "Site delivery history": 0.3113,
+    "Plant country": 0.1114,
+    "Shipping mode": 0.0984
+  },
+  "countries_modelled": [
+    "Canada",
+    "China",
+    "France",
+    "Germany",
+    "India",
+    "Ireland",
+    "Italy",
+    "Japan",
+    "Netherlands",
+    "South Africa",
+    "South Korea",
+    "Switzerland",
+    "Thailand",
+    "United Kingdom",
+    "United States"
+  ],
+  "panel_distinct_c2_values": 8,
+  "caveat": "SCMS covers ARV/HIV-test logistics (2006-2015); the model learns shipment physics, not oncology. Panel makers sharing plant country, mode and freight profile get the same C2."
+}

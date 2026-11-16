@@ -1,0 +1,73 @@
+{
+  "as_of": "2026-11-15",
+  "runtime_s": 4.3,
+  "matrix": "data/processed/suppliers_matrix.csv",
+  "c2_xgboost_test": {
+    "roc_auc": 0.7975,
+    "pr_auc": 0.3238,
+    "recall_late": 0.9185,
+    "precision_late": 0.2012,
+    "f1_late": 0.3301,
+    "f2_late": 0.5362,
+    "confusion_matrix": {
+      "tn": 891,
+      "fp": 1298,
+      "fn": 29,
+      "tp": 327
+    },
+    "threshold": 0.5
+  },
+  "c2_logreg_test": {
+    "roc_auc": 0.7856,
+    "pr_auc": 0.3035,
+    "recall_late": 0.8596,
+    "precision_late": 0.2868,
+    "f1_late": 0.4301,
+    "f2_late": 0.6142,
+    "confusion_matrix": {
+      "tn": 1428,
+      "fp": 761,
+      "fn": 50,
+      "tp": 306
+    },
+    "threshold": 0.5
+  },
+  "c3_lines_flagged": 422,
+  "c3_lines_scored": 8436,
+  "c4_letter_classifier": {
+    "data_integrity": {
+      "positives": 14,
+      "letters": 50,
+      "method": "TF-IDF + LogisticRegression, 5-fold OOF",
+      "oof_roc_auc": 0.966,
+      "oof_f1_at_0.5": 0.783
+    },
+    "sterility": {
+      "positives": 24,
+      "letters": 50,
+      "method": "TF-IDF + LogisticRegression, 5-fold OOF",
+      "oof_roc_auc": 0.994,
+      "oof_f1_at_0.5": 0.957
+    },
+    "process_validation": {
+      "positives": 16,
+      "letters": 50,
+      "method": "TF-IDF + LogisticRegression, 5-fold OOF",
+      "oof_roc_auc": 0.79,
+      "oof_f1_at_0.5": 0.522
+    },
+    "quality_unit": {
+      "positives": 46,
+      "letters": 50,
+      "method": "TF-IDF + LogisticRegression, 4-fold OOF",
+      "oof_roc_auc": 0.625,
+      "oof_f1_at_0.5": 0.947
+    }
+  },
+  "c4_contract_agreement": {
+    "force_majeure": "11/11",
+    "lead_time": "11/11",
+    "late_delivery_penalty": "11/11",
+    "single_source": "11/11"
+  }
+}

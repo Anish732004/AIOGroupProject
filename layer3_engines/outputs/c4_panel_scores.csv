@@ -1,0 +1,19 @@
+manufacturer_id,nlp_warning_severity,warning_letters_5yr,worst_letter,letters_basis,unscored_letters_5yr,sister_plant_warning,contract_risk_demo_only,contract_risk_source,contract_risk,c4_fda_part,C4_compliance_risk
+ACCORD HEALTHCARE,0.701,1,Intas Pharmaceuticals Limited 2023-07-28 (data_integrity),factory_only,2,Other plants of Intas Pharmaceuticals Limited: 1 serious (OAI) inspection(s) and 2 warning letter(s) in the last 5 years. Not scored: the score covers only the factory that makes this product.,0.0625,NOT SCORED (synthetic contract) - llm_cache,0.0,0.5,0.6402
+APOTEX,0.0,0,,factory_only,0,,0.5,NOT SCORED (synthetic contract) - llm_cache,0.0,0.1,0.1
+AVYXA PHARMA,0.0,0,,neutral: factory unknown,0,Factory not named on the drug label: inspection and warning-letter terms are neutral (no data). Not scored.,0.75,NOT SCORED (synthetic contract) - llm_cache,0.0,0.1,0.1
+BPI LABS,0.0,0,,factory_only,0,,0.4375,NOT SCORED (synthetic contract) - llm_cache,0.0,0.0,0.0
+CIPLA,0.637,1,Cipla Limited 2023-11-17 (sterility),company_name_link,0,,0.5,NOT SCORED (synthetic contract) - no contract on file - neutral 0.5,0.0,0.6,0.7274
+EUGIA US,0.0,0,,factory_only,2,Other plants of Eugia Pharma Specialities Limited: 4 serious (OAI) inspection(s) and 2 warning letter(s) in the last 5 years. Not scored: the score covers only the factory that makes this product.,0.9375,NOT SCORED (synthetic contract) - llm_cache,0.0,0.3,0.3
+FRESENIUS KABI USA,0.0,0,,neutral: factory unknown,1,Factory not named on the drug label: inspection and warning-letter terms are neutral (no data). The company itself received 1 warning letter(s) in the last 5 years. Not scored.,0.125,NOT SCORED (synthetic contract) - llm_cache,0.0,0.3,0.3
+GLAND PHARMA,0.0,0,,factory_only,0,,0.0625,NOT SCORED (synthetic contract) - llm_cache,0.0,0.0,0.0
+HERAEUS PRECIOUS METALS AND,0.0,0,,company_name_link,0,,0.5,NOT SCORED (synthetic contract) - no contract on file - neutral 0.5,0.0,0.1,0.1
+HETERO LABS,0.0,0,,company_name_link,0,,0.5,NOT SCORED (synthetic contract) - no contract on file - neutral 0.5,0.0,0.1,0.1
+HOSPIRA,0.0,0,,factory_only,0,,0.375,NOT SCORED (synthetic contract) - llm_cache,0.0,0.3,0.3
+NATCO PHARMA USA,0.0,0,,factory_only,0,,0.5625,NOT SCORED (synthetic contract) - llm_cache,0.0,0.1,0.1
+SICOR DE MEXICO DE C V,0.0,0,,company_name_link,0,,0.5,NOT SCORED (synthetic contract) - no contract on file - neutral 0.5,0.0,0.1,0.1
+SUN PHARMACEUTICAL INDUSTRIES,0.682,2,Sun Pharmaceutical Industries Ltd. 2023-10-16 (sterility),company_name_link,0,,0.5,NOT SCORED (synthetic contract) - no contract on file - neutral 0.5,0.0,0.6,0.7364
+TEVA PARENTERAL MEDICINES,0.0,0,,factory_only,0,,0.375,NOT SCORED (synthetic contract) - llm_cache,0.0,0.3,0.3
+TEYRO LABS,0.0,0,,factory_only,0,,0.75,NOT SCORED (synthetic contract) - llm_cache,0.0,0.1,0.1
+UMICORE AGRENTINA,0.0,0,,company_name_link,0,,0.5,NOT SCORED (synthetic contract) - no contract on file - neutral 0.5,0.0,0.3,0.3
+VERANOVA L P,0.0,0,,company_name_link,0,,0.5,NOT SCORED (synthetic contract) - no contract on file - neutral 0.5,0.0,0.0,0.0

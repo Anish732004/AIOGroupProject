@@ -1,0 +1,128 @@
+source,check,n_affected,n_total,pct,action,severity,detail
+scms,rows_read,10324,,,,info,SCMS_Delivery_History_Dataset.csv sha256=918b992dd3e8
+scms,step:1 raw file read,10324,,,,info,"shape=(10324, 33); target not built yet"
+scms,missing_critical_columns,0,,,,pass,
+scms,blank_rows,0,10324.0,0.0,quarantined,pass,
+scms,duplicate_primary_key_id,0,10324.0,0.0,quarantined (kept first),pass,
+scms,exact_duplicate_lines,4,10324.0,0.04,quarantined (kept lowest ID),warning,
+scms,step:2 blank rows + duplicates removed,10320,,,,info,"shape=(10320, 33); target not built yet"
+scms,date_unparseable:scheduled_delivery_date,0,10320.0,0.0,set NaT,info,[]
+scms,date_unparseable:delivered_to_client_date,0,10320.0,0.0,set NaT,info,[]
+scms,date_unparseable:delivery_recorded_date,0,10320.0,0.0,set NaT,info,[]
+scms,date_unparseable:pq_first_sent_to_client_date,0,10320.0,0.0,set NaT,info,[]
+scms,date_sentinel:pq_first_sent_to_client_date,2678,10320.0,25.95,set NaT + status column,info,"{'pre_pq': 2473, 'not_captured': 205}"
+scms,date_unparseable:po_sent_to_vendor_date,0,10320.0,0.0,set NaT,info,[]
+scms,date_sentinel:po_sent_to_vendor_date,5729,10320.0,55.51,set NaT + status column,info,"{'from_rdc': 5401, 'not_captured': 328}"
+scms,missing_scheduled_or_delivered_date,0,10324.0,0.0,quarantined (no label),pass,
+scms,step:3 dates parsed (errors=coerce) + target late built,10320,,,,info,"shape=(10320, 40); late=1186 (11.49%) on_time=9134"
+scms,non_numeric:line_item_quantity,0,10320.0,0.0,NaN,pass,
+scms,non_numeric:line_item_value,0,10320.0,0.0,NaN,pass,
+scms,non_numeric:pack_price,0,10320.0,0.0,NaN,pass,
+scms,non_numeric:unit_price,0,10320.0,0.0,NaN,pass,
+scms,non_numeric:unit_of_measure_per_pack,0,10320.0,0.0,NaN,pass,
+scms,non_numeric:line_item_insurance_usd,0,10320.0,0.0,NaN,pass,
+scms,impossible_qty_or_value,0,10324.0,0.0,quarantined,pass,
+scms,step:4 numeric fields coerced + impossible values removed,10320,,,,info,"shape=(10320, 40); late=1186 (11.49%) on_time=9134"
+scms,zero_value_or_zero_price_lines,103,10320.0,1.0,kept + flagged (donations/samples; excluded from price features),info,
+scms,line_value_vs_qty_x_pack_price_mismatch,1,10320.0,0.01,flagged,info,
+scms,unit_price_vs_pack_price_mismatch(>50%),0,10320.0,0.0,flagged (small gaps are 2-dp rounding),pass,
+scms,freight_text_values,4122,10320.0,39.94,categorised,info,"{'numeric': 6198, 'reference': 2441, 'included_in_commodity': 1442, 'captured_separately': 239}"
+scms,weight_text_values,3948,10320.0,38.26,categorised,info,"{'numeric': 6372, 'reference': 2441, 'captured_separately': 1507}"
+scms,freight_references_unresolved,0,2441.0,0.0,NaN,pass,
+scms,freight_references_to_non_numeric_line,105,2441.0,4.3,NaN; status inherited from referenced line (e.g. invoiced separately),info,
+scms,freight_shared_shipment_allocated,3577,10320.0,34.66,allocated by line-value share,info,
+scms,weight_references_unresolved,0,2441.0,0.0,NaN,pass,
+scms,weight_references_to_non_numeric_line,126,2441.0,5.16,NaN; status inherited from referenced line (e.g. invoiced separately),info,
+scms,weight_shared_shipment_allocated,3549,10320.0,34.39,allocated by line-value share,info,
+scms,insurance_missing_imputed,287,10320.0,2.78,imputed = line value x same-year median insurance rate (flagged),info,
+scms,"step:5 freight/weight coerced, shared shipments allocated, insurance imputed",10320,,,,info,"shape=(10320, 56); late=1186 (11.49%) on_time=9134"
+scms,shipment_mode_missing,360,10320.0,3.49,category 'Unknown' (not imputed - avoids inventing air/sea),info,
+scms,site_country_unmapped,0,10320.0,0.0,country='Unknown' - add row to reference/scms_site_country.csv,info,[]
+scms,site_country_low_or_no_confidence,61,10320.0,0.59,kept; verify rows marked low/none in reference file,info,"{'Bio-Rad Laboratories': 40, 'Not Applicable': 12, 'INVERNESS ANY': 3, 'Human Diagnostic': 3, 'ABBSP': 1, 'BUNDI INTERNATIONAL DIAGNOSTICS LTD': 1, 'INVERNESS ORGENICS LINE': 1}"
+scms,date_order_violation(delivered<PO or PO<PQ),10,10320.0,0.1,kept + flagged (exclude in ML if desired),warning,
+scms,step:6 categoricals standardised + plant country mapped,10320,,,,info,"shape=(10320, 64); late=1186 (11.49%) on_time=9134"
+scms,implausible_delay_abs_gt_365d,4,10324.0,0.04,quarantined (likely keying error),warning,
+scms,class_balance_late,1186,10316.0,11.5,,info,"by split: {'test': {'size': 2545, 'mean': 0.1399}, 'train': {'size': 7771, 'mean': 0.1068}}"
+scms,step:7 implausible delays removed + chronological split assigned,10316,,,,info,"shape=(10316, 66); late=1186 (11.50%) on_time=9130"
+scms,freight_to_value_ratio_gt_10x,50,10316.0,0.48,kept + flagged (tiny-value lines),info,
+scms,robust_outlier:unit_price,651,10316.0,6.31,FLAGGED only - retained as Isolation Forest signal,info,
+scms,robust_outlier:freight_to_value_ratio,1160,10316.0,11.24,FLAGGED only - retained as Isolation Forest signal,info,
+scms,robust_outlier:weight_kg_per_unit,825,10316.0,8.0,FLAGGED only - retained as Isolation Forest signal,info,
+scms,robust_outlier:line_item_value,35,10316.0,0.34,FLAGGED only - retained as Isolation Forest signal,info,
+scms,step:8 features engineered + outliers flagged (final),10316,,,,info,"shape=(10316, 74); late=1186 (11.50%) on_time=9130"
+scms,schema_contract,0,,,,pass,
+scms,rows_out_clean,10316,10324.0,99.92,,info,retained 10316/10324
+scms,site_features_low_history_sites,29,83.0,34.94,flagged (use country prior; probation logic in Layer 4),info,
+openfda_ndc,records_fetched_union_of_queries,48,,,,info,generic_name:carboplatin | active_ingredients.name:carboplatin | brand_name:paraplatin
+openfda_ndc,duplicate_product_ndc,7,48.0,14.58,kept latest listing,warning,
+openfda_ndc,excluded:not_human_rx,7,41.0,17.07,excluded from SKU gate,info,
+openfda_ndc,excluded:not_finished_dosage_form,7,41.0,17.07,excluded from SKU gate,info,
+openfda_ndc,excluded:not_injection,7,41.0,17.07,excluded from SKU gate,info,
+openfda_ndc,excluded:combination_or_wrong_molecule,0,41.0,0.0,excluded from SKU gate,pass,
+openfda_ndc,excluded:concentration_mismatch,7,41.0,17.07,excluded from SKU gate,info,
+openfda_ndc,excluded:listing_expired,0,41.0,0.0,excluded from SKU gate,pass,
+openfda_ndc,excluded:marketing_ended,0,41.0,0.0,excluded from SKU gate,pass,
+openfda_ndc,excluded:unapproved_marketing_category,7,41.0,17.07,excluded from SKU gate,info,
+openfda_ndc,products_in_scoring_panel,41,41.0,100.0,,info,"panel_scope=all_ndc_labelers; {'finished_injection': 34, 'bulk_api': 7}"
+openfda_ndc,labelers_bulk_api_only,7,18.0,38.89,kept in panel + flagged (no finished-injection authorization),info,"Cipla Ltd., Heraeus Precious Metals GmbH & Co. KG, Hetero Labs Limited, Sicor de Mexico S.A. de C.V, SUN PHARMACEUTICAL INDUSTRIES, INC., Umicore Agrentina s.A., Veranova, L.P."
+openfda_ndc,qualified_labelers,18,,,,info,"Accord Healthcare, Inc., Apotex Corp., AVYXA Pharma, LLC, BPI Labs LLC, Cipla Ltd., Eugia US LLC, Fresenius Kabi USA, LLC, Gland Pharma Limited, Heraeus Precious Metals GmbH & Co. KG, Hetero Labs Limited, Hospira, Inc., Natco Pharma USA LLC, Sicor de Mexico S.A. de C.V, SUN PHARMACEUTICAL INDUSTRIES, INC., Teva Parenteral Medicines, Inc., Teyro Labs Private Limited, Umicore Agrentina s.A., Veranova, L.P."
+openfda_ndc,labelers_with_multiple_name_spellings,0,18.0,0.0,collapsed on normalised key,pass,
+openfda_ndc,schema_contract,0,,,,pass,
+openfda_label,labels_without_country,10,13.0,76.92,manual override via reference/manufacturer_overrides.csv,warning,
+openfda_label,labels_mentioning_multiple_countries,1,13.0,7.69,first 'manufactured by' country used; review snippet,info,
+openfda_recalls,missing_key_fields,1,4962.0,0.02,quarantined,warning,
+openfda_recalls,duplicate_recall_number,0,4962.0,0.0,kept last,pass,
+openfda_recalls,unparseable_classification,1,4961.0,0.02,,warning,
+openfda_recalls,emails_redacted,8,,,replaced by [EMAIL] (PDPL data minimisation),info,
+openfda_recalls,schema_contract,0,,,,pass,
+openfda_shortages,emails_redacted,0,,,replaced by [EMAIL] (PDPL data minimisation),pass,
+openfda_shortages,emails_redacted,1,,,replaced by [EMAIL] (PDPL data minimisation),info,
+openfda_shortages_sku,duplicates_removed,0,35.0,0.0,kept latest update_date per company+package,pass,
+openfda_shortages_sku,unparseable_update_date,0,35.0,0.0,,pass,
+openfda_shortages_sku,update_date_in_future,0,35.0,0.0,,pass,
+openfda_shortages_oncology,duplicates_removed,0,84.0,0.0,kept latest update_date per company+package,pass,
+openfda_shortages_oncology,unparseable_update_date,0,84.0,0.0,,pass,
+openfda_shortages_oncology,update_date_in_future,0,84.0,0.0,,pass,
+openfda_shortages_oncology,distinct_active_oncology_molecules,8,84.0,9.52,,info,
+fda_inspections,missing_fei/classification/date,0,9300.0,0.0,quarantined,pass,
+fda_inspections,duplicate_rows,38,9300.0,0.41,removed (multi project-area rows kept),info,
+fda_inspections,non_drug_rows_removed,0,9300.0,0.0,,pass,
+fda_inspections,older_than_5y_removed,0,9300.0,0.0,,pass,
+fda_inspections,future_dated_inspections,0,9262.0,0.0,,pass,
+fda_inspections,classification_mix,880,9262.0,9.5,,info,"{'VAI': 4470, 'NAI': 3912, 'OAI': 880}"
+fda_inspections,schema_contract,0,,,,pass,
+worldbank,lpi_score_out_of_range,0,1379.0,0.0,quarantined,pass,
+worldbank,wgi_political_stability_out_of_range,24,3904.0,0.61,quarantined,warning,
+worldbank,aggregates_removed,79,296.0,26.69,removed (regions/income groups),info,
+worldbank,countries_missing_lpi_score,48,217.0,22.12,left NaN - Layer 2 should fall back to regional median and flag,info,
+worldbank,countries_missing_wgi_political_stability,10,217.0,4.61,left NaN - Layer 2 should fall back to regional median and flag,info,
+worldbank,lpi_older_than_6y,31,169.0,18.34,flagged,info,WGI series used: GOV_WGI_PV.EST (source=3)
+worldbank,schema_contract,0,,,,pass,
+warning_letters,letters_unreachable,0,51.0,0.0,,pass,
+warning_letters,too_short_documents,0,51.0,0.0,quarantined,pass,
+warning_letters,duplicate_documents(url/marcs/text-hash),1,51.0,1.96,quarantined,info,
+warning_letters,pii_redactions,152,,,redacted (UAE PDPL),info,
+warning_letters,documents_collected,50,,,,info,cgmp=50 sterility=28 data_integrity=14
+contracts,too_short_documents,0,11.0,0.0,quarantined,pass,
+contracts,duplicate_documents(url/marcs/text-hash),0,11.0,0.0,quarantined,pass,
+contracts,pii_redactions,0,,,redacted (UAE PDPL),pass,
+contracts,documents_collected,11,,,,info,
+scenario,corridor_assumption_validation,0,,,,pass,
+scenario,labelers_without_plant_country,4,18.0,22.22,"NEUTRAL values used (median of rankable makers with a known country), flagged",warning,"Fresenius Kabi USA, LLC, Sicor de Mexico S.A. de C.V, Umicore Agrentina s.A., Veranova, L.P."
+scenario,plant_country_from_hq_hint,4,18.0,22.22,flagged - verify plant,info,"Cipla Ltd., Heraeus Precious Metals GmbH & Co. KG, Hetero Labs Limited, SUN PHARMACEUTICAL INDUSTRIES, INC."
+scenario,labelers_missing_lpi,4,18.0,22.22,neutral value 3.40 (median of rankable makers with a known country) + flagged,warning,
+scenario,schema_contract,0,,,,pass,
+scenario,rapidfuzz_available,0,,,,pass,
+scenario,entity_links_rejected_by_reviewer,17,,,removed before counting,info,15 decision row(s) in reference/entity_match_decisions.csv
+scenario,entity_links_found,138,,,,info,"{'fda_inspections': 65, 'openfda_recalls': 23, 'scms': 15, 'warning_letters': 14, 'contracts': 12, 'openfda_shortages': 9}"
+scenario,entity_links_needing_manual_check,66,138.0,47.83,review entity_match_candidates.csv (plan 5.2 step 3),info,
+scenario,makers_scored_on_their_factory_only,9,18.0,50.0,,info,"neutral (factory unknown): ['AVYXA PHARMA', 'FRESENIUS KABI USA']"
+scenario,injectable_recalls_by_seller,58,,,,info,"parent-company recalls not naming the seller (shown, not scored): 1"
+scenario,labelers_inspections_scoped_to_all_company_plants,2,18.0,11.11,no plant in the maker's country (or country unknown): all company plants used - verify,info,"Sicor de Mexico S.A. de C.V, Umicore Agrentina s.A."
+scenario,probation_labelers(<5 historical shipments),15,18.0,83.33,,info,"Cipla Ltd., Hetero Labs Limited, SUN PHARMACEUTICAL INDUSTRIES, INC. have history"
+scenario,c2_inference_rows_without_site_prior,15,18.0,83.33,use country / corridor prior (plan 3.1 'where available'),info,
+scenario,c1_price_outliers_capped_at_1.0,1,18.0,5.56,min-max scaled on inliers only; raw USD kept in C1_landed_cost_usd_raw,warning,"AVYXA Pharma, LLC"
+suppliers_matrix,schema_contract,0,,,,pass,
+suppliers_matrix,C2_delivery_risk_pending_downstream_engine,18,18.0,100.0,left empty for Layer 3 (not a Layer 1 output),info,
+suppliers_matrix,C4_compliance_risk_pending_downstream_engine,18,18.0,100.0,left empty for Layer 3 (not a Layer 1 output),info,
+scenario,plan_figures_that_differ_from_live_data,0,6.0,0.0,quote the live figure on slides,pass,

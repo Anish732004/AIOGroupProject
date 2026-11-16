@@ -1,0 +1,4 @@
+# Upload only the website to Vercel; the Python pipeline and its data stay out.
+/*
+!/web
+!/vercel.json

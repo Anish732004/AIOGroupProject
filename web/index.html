@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PharmaShield GCC</title>
+<meta name="description" content="PharmaShield GCC: choosing medicine suppliers on evidence, not on price alone. A course prototype for a UAE hospital purchasing group.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M16 6l8 3v7c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V9z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+<script>
+  // theme: ?theme=dark|light in the URL, else the saved choice, else the device setting
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search).get('theme');
+      var t = q || localStorage.getItem('pharmashield_theme');
+      if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="shell">
+  <aside class="side" aria-label="Site">
+    <a class="brand" href="#/">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="30" height="30"><rect width="32" height="32" rx="7" fill="var(--accent)"/><path d="M16 6l8 3v7c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V9z" fill="#fff"/></svg>
+      </span>
+      <span><span class="brand-name">PharmaShield GCC</span><span class="brand-sub">Supplier risk cockpit</span></span>
+    </a>
+    <nav class="nav" id="nav" aria-label="Pages"></nav>
+    <div class="side-foot">
+      <div id="snapshot-note" class="small muted"></div>
+      <button id="theme-toggle" class="btn ghost small-btn" type="button">Switch theme</button>
+    </div>
+  </aside>
+  <main id="main" class="main" tabindex="-1">
+    <div id="controls"></div>
+    <div id="view"><p class="muted pad">Loading the data snapshot…</p></div>
+    <footer class="foot small muted">
+      A course prototype (AI in Operations). Not procurement advice. Every number follows the evidence rule on the
+      <a href="#/trust">Evidence &amp; trust</a> page.
+    </footer>
+  </main>
+</div>
+<div id="tip" class="tip" role="tooltip" hidden></div>
+<script src="js/core.js"></script>
+<script src="js/contract.js"></script>
+<script src="js/audit.js"></script>
+<script src="js/views.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+criterion,"AHP (board, this mode)",Entropy (information only),Used for ranking
+C1_landed_cost,0.1,0.0325,0.1
+C2_delivery_risk,0.3,0.4604,0.3
+C3_price_integrity,0.05,0.0,0.05
+C4_compliance_risk,0.3,0.0434,0.3
+C5_route_exposure,0.25,0.4637,0.25

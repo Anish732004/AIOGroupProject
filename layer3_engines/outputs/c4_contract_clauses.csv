@@ -1,0 +1,12 @@
+supplier_name,source_file,extraction_source,contract_risk,force_majeure_risk,lead_time_risk,late_delivery_penalty_risk,single_source_risk,force_majeure,lead_time_days,late_delivery_penalty,exclusive_share_pct,shortage_allocation,safety_stock_days,surcharges_uncapped,supplier_can_terminate_for_convenience,rule_contract_risk,llm_rule_agree_all_clauses
+"Accord Healthcare, Inc.",accord_healthcare_inc_msa.txt,llm_cache,0.0625,0.0,0.25,0.0,0.0,hormuz_disruption_excluded,45,weekly_ld_with_substitute_right,,pro_rata,30,False,False,0.0625,True
+Apotex Corp.,apotex_corp_msa.txt,llm_cache,0.5,1.0,0.5,0.5,0.0,supplier_discretion_unlimited,60,ld_after_delay_threshold_low_cap,,supplier_discretion,0,True,False,0.5,True
+"AVYXA Pharma, LLC",avyxa_pharma_llc_msa.txt,llm_cache,0.75,1.0,0.5,0.5,1.0,supplier_discretion_unlimited,60,ld_after_delay_threshold_low_cap,70.0,pro_rata,0,True,False,0.75,True
+BPI Labs LLC,bpi_labs_llc_msa.txt,llm_cache,0.4375,0.5,0.25,1.0,0.0,balanced_capped,45,none,,supplier_discretion,0,False,True,0.4375,True
+Eugia US LLC,eugia_us_llc_msa.txt,llm_cache,0.9375,1.0,0.75,1.0,1.0,supplier_discretion_unlimited,75,none,80.0,supplier_discretion,0,True,True,0.9375,True
+"Fresenius Kabi USA, LLC",fresenius_kabi_usa_llc_msa.txt,llm_cache,0.125,0.5,0.0,0.0,0.0,balanced_capped,30,weekly_ld_with_substitute_right,,buyer_priority,45,False,False,0.125,True
+Gland Pharma Limited,gland_pharma_limited_msa.txt,llm_cache,0.0625,0.0,0.25,0.0,0.0,hormuz_disruption_excluded,45,weekly_ld_with_substitute_right,,buyer_priority,60,False,False,0.0625,True
+"Hospira, Inc.",hospira_inc_msa.txt,llm_cache,0.375,0.5,0.5,0.5,0.0,balanced_capped,60,ld_after_delay_threshold_low_cap,,pro_rata,0,False,False,0.375,True
+Natco Pharma USA LLC,natco_pharma_usa_llc_msa.txt,llm_cache,0.5625,0.5,0.25,0.5,1.0,balanced_capped,45,ld_after_delay_threshold_low_cap,60.0,pro_rata,30,False,False,0.5625,True
+"Teva Parenteral Medicines, Inc.",teva_parenteral_medicines_inc_msa.txt,llm_cache,0.375,0.5,0.5,0.5,0.0,balanced_capped,60,ld_after_delay_threshold_low_cap,,pro_rata,0,True,False,0.375,True
+Teyro Labs Private Limited,teyro_labs_private_limited_msa.txt,llm_cache,0.75,1.0,1.0,1.0,0.0,supplier_discretion_unlimited,90,none,,supplier_discretion,0,True,True,0.75,True

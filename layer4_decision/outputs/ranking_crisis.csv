@@ -1,0 +1,12 @@
+manufacturer_id,S,composite_risk,D_plus,D_minus,rank,gap_share_C1,gap_share_C2,gap_share_C3,gap_share_C4,gap_share_C5,labeler_name_fda,factory_name,source_plant_group,manufacturing_country,is_probation,C1_landed_cost_usd_raw,monthly_capacity_units,value_C1_landed_cost,value_C2_delivery_risk,value_C3_price_integrity,value_C4_compliance_risk,value_C5_route_exposure
+AVYXA PHARMA,0.858314,0.141686,0.033336,0.201947,1,0.0,0.0,0.0,1.0,0.0,"AVYXA Pharma, LLC",(not named on label),AVYXA_SWITZERLAND,Switzerland,True,2355.4623,10000,1.0,0.0263,0.0,0.1,0.18
+BPI LABS,0.700163,0.299837,0.091394,0.213419,2,0.0,0.6979,0.0,0.0,0.3021,BPI Labs LLC,Gland Pharma Limited,GLAND_VISAKHAPATNAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.0,0.32
+GLAND PHARMA,0.700163,0.299837,0.091394,0.213419,2,0.0,0.6979,0.0,0.0,0.3021,Gland Pharma Limited,Gland Pharma Limited,GLAND_VISAKHAPATNAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.0,0.32
+APOTEX,0.649258,0.350742,0.097284,0.180083,4,0.0,0.616,0.0,0.1174,0.2666,Apotex Corp.,Teyro Labs Private Limited,TEYRO_ORAGADAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.1,0.32
+NATCO PHARMA USA,0.649258,0.350742,0.097284,0.180083,4,0.0,0.616,0.0,0.1174,0.2666,Natco Pharma USA LLC,Teyro Labs Private Limited,TEYRO_ORAGADAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.1,0.32
+TEYRO LABS,0.649258,0.350742,0.097284,0.180083,4,0.0,0.616,0.0,0.1174,0.2666,Teyro Labs Private Limited,Teyro Labs Private Limited,TEYRO_ORAGADAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.1,0.32
+TEVA PARENTERAL MEDICINES,0.590596,0.409404,0.100042,0.144318,7,0.0,0.0007,0.0,0.9993,0.0,"Teva Parenteral Medicines, Inc.",Pharmachemie B.V.,PHARMACHEMIE_HAARLEM,Netherlands,True,27.9546,10000,0.0,0.0289,0.0,0.3,0.18
+HOSPIRA,0.518483,0.481517,0.111998,0.120597,8,0.0,0.137,0.0,0.7974,0.0657,"Hospira, Inc.",Hospira Australia Pty Ltd,HOSPIRA_AUSTRALIA,Australia,True,27.9546,10000,0.0,0.0681,0.0,0.3,0.26
+EUGIA US,0.455664,0.544336,0.135479,0.11341,9,0.0,0.3176,0.0,0.5449,0.1375,Eugia US LLC,Eugia Pharma Specialities Limited,EUGIA_UNIT1_KOLTHUR,India,True,27.9546,10000,0.0,0.1033,0.0,0.3,0.32
+FRESENIUS KABI USA,0.455664,0.544336,0.135479,0.11341,9,0.0,0.3176,0.0,0.5449,0.1375,"Fresenius Kabi USA, LLC",(not stated on label),FRESENIUS_UNKNOWN,Unknown,True,27.9546,10000,0.0,0.1033,0.0,0.3,0.32
+ACCORD HEALTHCARE,0.0,1.0,0.232165,0.0,11,0.0,0.1082,0.0,0.845,0.0468,"Accord Healthcare, Inc.",Intas Pharmaceuticals Limited,INTAS_PHARMEZ_AHMEDABAD,India,True,27.9546,10000,0.0,0.1033,0.0,0.6402,0.32

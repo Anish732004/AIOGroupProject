@@ -1,0 +1,2 @@
+_reject_reason,doc_id,source_url,source_file,title,company_name,company_key,letter_date,marcs_cms,fei_number,mentions_cgmp,mentions_sterility,mentions_data_integrity,n_chars,pii_redactions,text_sha256
+duplicate_document,26d5f31c2d4e,https://www.fda.gov/inspections-compliance-enforcement-and-criminal-investigations/warning-letters/sun-pharmaceutical-industries-ltd-636199-12152022,,,Sun Pharmaceutical Industries Ltd.,SUN PHARMACEUTICAL INDUSTRIES,2023-10-16,,3002809586,True,True,False,27598,5,62de0018f549067953004fadfd8a6af80bd4d8560dabda6a4f7de0bd1fac4608

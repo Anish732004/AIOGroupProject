@@ -1,0 +1,52 @@
+{
+  "warning_letter_classifier": {
+    "data_integrity": {
+      "positives": 14,
+      "letters": 50,
+      "method": "TF-IDF + LogisticRegression, 5-fold OOF",
+      "oof_roc_auc": 0.966,
+      "oof_f1_at_0.5": 0.783
+    },
+    "sterility": {
+      "positives": 24,
+      "letters": 50,
+      "method": "TF-IDF + LogisticRegression, 5-fold OOF",
+      "oof_roc_auc": 0.994,
+      "oof_f1_at_0.5": 0.957
+    },
+    "process_validation": {
+      "positives": 16,
+      "letters": 50,
+      "method": "TF-IDF + LogisticRegression, 5-fold OOF",
+      "oof_roc_auc": 0.79,
+      "oof_f1_at_0.5": 0.522
+    },
+    "quality_unit": {
+      "positives": 46,
+      "letters": 50,
+      "method": "TF-IDF + LogisticRegression, 4-fold OOF",
+      "oof_roc_auc": 0.625,
+      "oof_f1_at_0.5": 0.947
+    }
+  },
+  "severity_weights": {
+    "sterility": 1.0,
+    "data_integrity": 1.0,
+    "process_validation": 0.6,
+    "quality_unit": 0.5
+  },
+  "letter_lookback_years": 5,
+  "contract_extraction": {
+    "contracts": 11,
+    "llm_cache_hits": 11,
+    "llm_model": "Claude Opus 5.5 (claude-opus-5-5) - zero-shot clause extraction in a Claude Code session",
+    "llm_extracted_on": "2026-11-15",
+    "clause_agreement_llm_vs_rules": {
+      "force_majeure": "11/11",
+      "lead_time": "11/11",
+      "late_delivery_penalty": "11/11",
+      "single_source": "11/11"
+    }
+  },
+  "formula": "min(1, 0.30*I(OAI) + 0.10*I(VAI) + 0.20*min(1, recalls/2) + 0.20*NLP_WarningSev + 0.20*LLM_ContractRisk); contract term = 0 for all makers because the contracts are synthetic (team decision item 7)"
+}

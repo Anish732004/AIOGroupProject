@@ -1,0 +1,6 @@
+__pycache__/
+.pytest_cache/
+# raw API responses (about 14 MB) stay local; the cleaned tables below are committed as the 15 Nov 2026 snapshot
+data/raw/
+# debug log (contains local file paths)
+data/quality/ingestion.log

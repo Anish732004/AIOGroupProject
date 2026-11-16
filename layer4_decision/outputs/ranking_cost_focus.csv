@@ -1,0 +1,12 @@
+manufacturer_id,S,composite_risk,D_plus,D_minus,rank,gap_share_C1,gap_share_C2,gap_share_C3,gap_share_C4,gap_share_C5,labeler_name_fda,factory_name,source_plant_group,manufacturing_country,is_probation,C1_landed_cost_usd_raw,monthly_capacity_units,value_C1_landed_cost,value_C2_delivery_risk,value_C3_price_integrity,value_C4_compliance_risk,value_C5_route_exposure
+BPI LABS,0.786642,0.213358,0.07933,0.292485,1,0.0,0.9264,0.0,0.0,0.0736,BPI Labs LLC,Gland Pharma Limited,GLAND_VISAKHAPATNAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.0,0.272
+GLAND PHARMA,0.786642,0.213358,0.07933,0.292485,1,0.0,0.9264,0.0,0.0,0.0736,Gland Pharma Limited,Gland Pharma Limited,GLAND_VISAKHAPATNAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.0,0.272
+APOTEX,0.757728,0.242272,0.08605,0.269128,3,0.0,0.7873,0.0,0.1501,0.0626,Apotex Corp.,Teyro Labs Private Limited,TEYRO_ORAGADAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.1,0.272
+NATCO PHARMA USA,0.757728,0.242272,0.08605,0.269128,3,0.0,0.7873,0.0,0.1501,0.0626,Natco Pharma USA LLC,Teyro Labs Private Limited,TEYRO_ORAGADAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.1,0.272
+TEYRO LABS,0.757728,0.242272,0.08605,0.269128,3,0.0,0.7873,0.0,0.1501,0.0626,Teyro Labs Private Limited,Teyro Labs Private Limited,TEYRO_ORAGADAM,India,True,27.9546,10000,0.0,0.1033,0.0,0.1,0.272
+TEVA PARENTERAL MEDICINES,0.707875,0.292125,0.100042,0.242421,6,0.0,0.0007,0.0,0.9993,0.0,"Teva Parenteral Medicines, Inc.",Pharmachemie B.V.,PHARMACHEMIE_HAARLEM,Netherlands,True,27.9546,10000,0.0,0.0289,0.0,0.3,0.153
+HOSPIRA,0.681129,0.318871,0.108955,0.232734,7,0.0,0.1447,0.0,0.8425,0.0127,"Hospira, Inc.",Hospira Australia Pty Ltd,HOSPIRA_AUSTRALIA,Australia,True,27.9546,10000,0.0,0.0681,0.0,0.3,0.221
+EUGIA US,0.643001,0.356999,0.127652,0.229917,8,0.0,0.3578,0.0,0.6138,0.0284,Eugia US LLC,Eugia Pharma Specialities Limited,EUGIA_UNIT1_KOLTHUR,India,True,27.9546,10000,0.0,0.1033,0.0,0.3,0.272
+FRESENIUS KABI USA,0.643001,0.356999,0.127652,0.229917,8,0.0,0.3578,0.0,0.6138,0.0284,"Fresenius Kabi USA, LLC",(not stated on label),FRESENIUS_UNKNOWN,Unknown,True,27.9546,10000,0.0,0.1033,0.0,0.3,0.272
+AVYXA PHARMA,0.492519,0.507481,0.202759,0.196782,10,0.973,0.0,0.0,0.027,0.0,"AVYXA Pharma, LLC",(not named on label),AVYXA_SWITZERLAND,Switzerland,True,2355.4623,10000,1.0,0.0263,0.0,0.1,0.153
+ACCORD HEALTHCARE,0.467633,0.532367,0.227686,0.2,11,0.0,0.1125,0.0,0.8786,0.0089,"Accord Healthcare, Inc.",Intas Pharmaceuticals Limited,INTAS_PHARMEZ_AHMEDABAD,India,True,27.9546,10000,0.0,0.1033,0.0,0.6402,0.272
