@@ -38,6 +38,12 @@ window.PS = (function () {
   };
 
   /* ---- marks ---- */
+  /* a mark is "no data" when every supplier has the same value (e.g. billing: no supplier has its own invoices) */
+  PS.noData = function (cid) {
+    const v = PS.data.suppliers.map(function (s) { return s.marks[cid]; });
+    return v.every(function (x) { return Math.abs(x - v[0]) < 1e-12; });
+  };
+  PS.NO_DATA_TIP = 'No data: the same value for every supplier, so it has no effect on the ranking.';
   PS.meter = function (v, max, opts) {
     opts = opts || {};
     const w = Math.max(0, Math.min(100, 100 * (v || 0) / (max || 1)));

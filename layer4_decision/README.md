@@ -7,7 +7,7 @@ Master Implementation Plan §4.2 (weights and modes), §4.4 (TOPSIS and linear p
 cd layer4_decision
 pip install -r requirements.txt
 python run_decision.py            # Normal, Crisis and Cost Focus modes; lambda 1.0, entropy share 0%
-python -m pytest -q               # 10 tests
+python -m pytest -q               # 15 tests
 ```
 
 The cockpit (`streamlit_app.py`, tab 3) runs the same engine live with the mode button and the λ and entropy sliders.

@@ -120,6 +120,10 @@ def main() -> int:
     check("C6 text: 'None of the 11 has 5 or more past shipments of its own'",
           int((~e["is_probation"].astype(bool)).sum()) == 0 and f"None of the {n_rank} has 5" in text)
     check("C7 text: '8 factories' equals the data", snap["meta"]["factories"] == e["source_plant_group"].nunique())
+    c3_same = e["C3_price_integrity"].nunique() == 1
+    c3_row = [r for r in content["evidence_ledger"] if r["feeds"].startswith("C3")]
+    check("C9 billing has no data for anyone -> labelled 'No data' on the site, and has no effect",
+          c3_same and len(c3_row) == 1 and c3_row[0]["level"] == "nodata")
     check("C8 text: approver initials only, no personal data in scores", "initials or a staff ID only" in text)
 
     # ------------------------------------------------------------------ D. documented differences

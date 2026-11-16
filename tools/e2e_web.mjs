@@ -66,6 +66,7 @@ await go('#/suppliers');
 const firstNormal = await ev('document.querySelector("tr[data-supplier] strong + strong, tr[data-supplier] td.col-supplier strong").textContent');
 await ev('document.querySelector("[data-mode=Crisis]").click()'); await sleep(150);
 const firstCrisis = await ev('document.querySelector("tr[data-supplier] td.col-supplier strong").textContent');
+check('billing mark reads "no data" in the supplier table', await ev('[...document.querySelectorAll("tr[data-supplier]")].every(r => r.textContent.includes("no data"))'));
 check('Crisis button re-ranks (first: ' + firstNormal + ' -> ' + firstCrisis + ')', firstCrisis.includes('AVYXA') && !firstNormal.includes('AVYXA'));
 check('situation note updates', (await ev('document.getElementById("mode-note").textContent')).includes('Hormuz'));
 check('pressed state moves', await ev('document.querySelector("[data-mode=Crisis]").getAttribute("aria-pressed") === "true" && document.querySelector("[data-mode=Normal]").getAttribute("aria-pressed") === "false"'));

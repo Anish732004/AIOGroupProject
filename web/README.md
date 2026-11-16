@@ -50,14 +50,14 @@ After re-running the pipeline (Layer 1 → Layer 3), regenerate the snapshot and
 ```bash
 python tools/export_web_snapshot.py     # runs Layer 4 for all 234 scenarios + stress tests -> web/data/snapshot.json
 node tools/test_web.mjs                 # 6 checks on the snapshot and the browser-side logic
-python tools/check_consistency.py       # 50 checks: plan vs pipeline vs website
+python tools/check_consistency.py       # 51 checks: plan vs pipeline vs website
 ```
 
 ## Test locally
 
 ```bash
 node tools/serve_web.mjs                # http://127.0.0.1:8766/ with the same security headers as Vercel
-node tools/e2e_web.mjs                  # 57 checks in headless Chrome (CHROME=... to point at another browser)
+node tools/e2e_web.mjs                  # 58 checks in headless Chrome (CHROME=... to point at another browser)
 ```
 
 If you change the small script inside `index.html`, update its `sha256-…` value in `vercel.json`;

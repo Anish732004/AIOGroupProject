@@ -191,7 +191,7 @@
     // 7. what the evidence can and cannot say
     const tied = sc.S.filter(function (s) { return Math.abs(s - sc.S[sc.rank.indexOf(1)]) < 1e-6; }).length;
     out.push({ title: 'Many suppliers score alike, by design',
-      text: 'Cost is 0 for ' + vals.filter(function (v) { return v[0] === 0; }).length + ' suppliers and billing is 0 for all ' + vals.length +
+      text: 'Cost is 0 for ' + vals.filter(function (v) { return v[0] === 0; }).length + ' suppliers and billing has no data, so it is the same (0) for all ' + vals.length +
         ', because numbers without evidence were set to the same neutral value rather than invented. The ranking therefore rests on the FDA record, the delivery model and each country\'s logistics score.',
       link: '#/trust', cta: 'See the evidence' });
     return out;
@@ -222,6 +222,7 @@
     const txt = function (v) { return e(v); };
     const n = function (v) { return v === null || v === undefined ? '–' : PS.num(v); };
     const markRows = crit.map(function (c, j) {
+      if (PS.noData(c.id)) return row(c.short, 'no data for any supplier', 0, 0, function () { return PS.meter(0, 1, { label: 'no data', tip: c.short + ': ' + PS.NO_DATA_TIP }); });
       return row(c.short, '0 best · 1 worst', vals[ia][j], vals[ib][j], function (v) { return PS.meter(v, 1, { tip: c.short + ': ' + v.toFixed(3) }); }, true);
     }).join('');
     const sameFactory = A.factory_group === B.factory_group;
@@ -280,12 +281,12 @@
         '<td class="col-supplier"><strong>' + e(sp.name) + '</strong><span class="cellsub">' + e((sp.factory && sp.factory.indexOf('(') !== 0 ? 'Made by ' + sp.factory : 'Factory not named on the label') +
           ' · ' + (sp.country === 'Unknown' ? 'country not stated' : sp.country)) + '</span>' + delta + rowFlags(sp) + '</td>' +
         '<td>' + PS.meter(sc.S[i], 1, { d: 3, tip: sp.name + ': overall score ' + sc.S[i].toFixed(3) + ' (1 = the ideal supplier).' }) + '</td>' +
-        crit.map(function (c, j) { return '<td>' + PS.meter(vals[i][j], 1, { tip: sp.name + ' · ' + c.short + ': ' + vals[i][j].toFixed(3) + ' (0 best, 1 worst).' }) + '</td>'; }).join('') +
+        crit.map(function (c, j) { return '<td>' + (PS.noData(c.id) ? PS.meter(0, 1, { label: 'no data', tip: c.short + ': ' + PS.NO_DATA_TIP }) : PS.meter(vals[i][j], 1, { tip: sp.name + ' · ' + c.short + ': ' + vals[i][j].toFixed(3) + ' (0 best, 1 worst).' })) + '</td>'; }).join('') +
         '</tr>';
     }).join('');
     return head('Suppliers', 'Who can supply it, and how each one scores',
       d.meta.rankable + ' companies sell finished carboplatin vials. They are ranked for the situation chosen above. Select a row to see why a supplier scored as it did.') +
-      PS.banner('info', 'new', 'All ' + d.meta.rankable + ' are <strong>new suppliers</strong>: none has 5 or more past deliveries of its own on record. Their billing mark is therefore 0 for all (the plan\'s rule for new suppliers).') +
+      PS.banner('info', 'new', 'All ' + d.meta.rankable + ' are <strong>new suppliers</strong>: none has 5 or more past deliveries of its own on record. There is no billing data for any of them, so their billing mark is the same (0) for all, the plan\'s rule for new suppliers. It therefore has no effect on the ranking.') +
       '<div class="section table-wrap"><table><thead><tr><th>#</th><th>Supplier</th>' +
       '<th data-tip="How close the supplier is to an ideal one that is best on every mark. Higher is better." tabindex="0">Overall score<span class="hint">higher is better</span></th>' +
       crit.map(function (c) { return '<th data-tip="' + e(c.plain) + '" tabindex="0">' + e(c.short) + '<span class="hint">0 best · 1 worst</span></th>'; }).join('') +
@@ -377,7 +378,7 @@
     const weights = '<div class="legend"><span><span class="sw"></span>Weight used now</span>' + (changed ? '<span><span class="sw context"></span>Board\'s everyday weight</span>' : '') + '</div><div class="bars">' +
       crit.map(function (c, j) {
         return '<div class="bar-row"><div class="name">' + e(c.short) + '</div><div class="pair">' +
-          PS.barLine(100 * sc.w[j], 50, PS.pct(100 * sc.w[j], 1), { tip: c.short + ' counts for ' + PS.pct(100 * sc.w[j], 1) + ' of the ranking in this situation.' }) +
+          PS.barLine(100 * sc.w[j], 50, PS.pct(100 * sc.w[j], 1) + (PS.noData(c.id) ? ' · no effect' : ''), { tip: PS.noData(c.id) ? c.short + ' has ' + PS.pct(100 * sc.w[j], 1) + ' weight, but ' + PS.NO_DATA_TIP.charAt(0).toLowerCase() + PS.NO_DATA_TIP.slice(1) : c.short + ' counts for ' + PS.pct(100 * sc.w[j], 1) + ' of the ranking in this situation.' }) +
           (changed ? PS.barLine(100 * d.modes.Normal.ahp[j], 50, PS.pct(100 * d.modes.Normal.ahp[j], 1), { context: true, tip: 'Board\'s everyday weight for ' + c.short.toLowerCase() + ': ' + PS.pct(100 * d.modes.Normal.ahp[j], 1) + '.' }) : '') +
           '</div></div>';
       }).join('') + '</div>';

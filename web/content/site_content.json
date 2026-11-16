@@ -159,10 +159,17 @@
     },
     {
       "input": "Each supplier's own delivery history",
-      "feeds": "C2, C3, probation",
+      "feeds": "C2, probation",
       "level": "real",
       "source": "USAID SCMS delivery history",
-      "note": "None of the 11 has 5 or more past shipments of its own, so all are treated as new suppliers."
+      "note": "None of the 11 has 5 or more past shipments of its own, so all are treated as new suppliers. This is about delivery history with buyers, not about whether they make carboplatin: that comes from the FDA product list and the drug labels."
+    },
+    {
+      "input": "Billing oddities (each supplier's own invoices)",
+      "feeds": "C3 Billing",
+      "level": "nodata",
+      "source": "None (no supplier has its own invoices in the data)",
+      "note": "Set to 0 for every supplier, the plan's rule for new suppliers. Because it is the same for all, it has no effect: removing its 5% weight leaves every score, rank and vial unchanged."
     },
     {
       "input": "FDA inspection results",
@@ -237,7 +244,7 @@
   ],
   "limits": [
     "The late-delivery model learned from HIV-medicine shipments to other regions between 2006 and 2015. It captures how shipping behaves in general, not oncology supply to the Gulf.",
-    "No supplier has its own delivery or invoice history in the data, so all 11 are treated as new suppliers. The billing mark is 0 for all of them.",
+    "No supplier has its own delivery or invoice history in the data, so all 11 are treated as new suppliers. There is no billing data for any of them, so the billing mark is the same (0) for all and has no effect on the ranking.",
     "Only 50 FDA warning letters were read. A supplier with no letter here may still have one.",
     "Prices are US reimbursement prices. Real tender quotes would replace them in a live system.",
     "Several marks are equal for many suppliers because invented differences were removed. The ranking leans mostly on the FDA record, the delivery model and the country logistics score.",
