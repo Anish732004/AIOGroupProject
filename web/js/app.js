@@ -32,10 +32,10 @@
   function renderControls(force) {
     const need = WITH_CONTROLS[route()[2]];
     if (!need) { controls.innerHTML = ''; return; }
-    if (force || !controls.firstChild) { controls.innerHTML = PS.views.controls(); return; }
+    if (force || !controls.firstChild) { controls.innerHTML = PS.views.controls(route()[2]); return; }
     const s = PS.state;                                    // update in place so a slider keeps focus while dragged
     controls.querySelectorAll('[data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === s.mode)); });
-    document.getElementById('lam-val').textContent = s.lam.toFixed(2);
+    const lv = document.getElementById('lam-val'); if (lv) lv.textContent = s.lam.toFixed(2);
     document.getElementById('ent-val').textContent = Math.round(100 * s.ent) + '%';
     document.getElementById('mode-note').textContent = controls.querySelector('[data-mode][aria-pressed="true"]') ? MODE_NOTES[s.mode] : '';
   }

@@ -76,6 +76,14 @@ check('detail shows label evidence', (await ev('document.querySelector("#detail 
 await ev('const r = document.querySelector("tr[data-supplier=\\"HOSPIRA\\"]"); r.focus(); r.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))'); await sleep(200);
 check('keyboard Enter opens a detail', (await ev('document.querySelector("#detail h2").textContent')).includes('Hospira'));
 
+// the dial only changes the order split, so it is shown only on the split page
+await go('#/suppliers');
+check('risk dial is not shown on Suppliers (it does not change the ranking)', await ev('!document.getElementById("lam") && !!document.getElementById("ent")'));
+await go('#/compare');
+check('risk dial is not shown on Compare', await ev('!document.getElementById("lam")'));
+await go('#/split');
+check('risk dial is shown on the split page, with an explanation that positive values give the same split', await ev('!!document.getElementById("lam")') && (await ev('document.getElementById("view").textContent')).includes('does not change this split'));
+await go('#/suppliers');
 // split: situation carries over, dial, notes
 await go('#/split');
 check('situation carries across pages', await ev('document.querySelector("[data-mode=Crisis]").getAttribute("aria-pressed") === "true"'));

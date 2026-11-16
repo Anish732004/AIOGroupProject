@@ -99,7 +99,8 @@ with st.sidebar:
                     help="Crisis: weight moves from cost to route exposure, and Hormuz exposure x1.5 (capped at 1). "
                          "Cost Focus: weight moves from route exposure to cost.")
     lam = st.slider("Risk dial λ (team decision L1)", 0.0, 3.0, 1.0, 0.1,
-                    help="How strongly the order split avoids lower-ranked suppliers compared with saving money. "
+                    help="Affects only the order split (tab 3), not the ranking. How strongly the split avoids lower-ranked suppliers compared with saving money. "
+                         "Because all generics cost the same, the split is the same for every value above about 0.05; the share caps decide. "
                          "λ = 1: a supplier's risk can add up to 100% of the average vial cost as a penalty.")
     ent = st.slider("Entropy (data-driven) weight share", 0, 50, 0, 5, format="%d%%",
                     help="Team decision L5: the board's tier weights drive the ranking (0%). The plan's 50/50 blend "

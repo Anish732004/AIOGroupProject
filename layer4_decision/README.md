@@ -53,6 +53,9 @@ Read this honestly on the slides:
 * **Crisis mode changes the ranking but not the split.** With cost weight at 0, Avyxa (lowest route exposure, but
   about 84 times the price) moves from rank 6 to rank 1, and Accord falls to S = 0. The split is unchanged because the
   plan's order-split objective still weighs landed cost, so Avyxa receives no order. The cockpit says so explicitly.
+* **The risk dial has a visible effect only between 0 and any positive value.** All ten generics share one price, so
+  every dial setting above about 0.05 ranks them the same way and the share caps decide (real view: dial 0 gives
+  Accord/Apotex/BPI/Eugia, every higher setting gives Apotex/BPI/Teva/Hospira). It would matter with real tender quotes.
 * **The risk penalty is scaled by the mean cost of all rankable makers** (plan formula). Avyxa's price lifts that mean
   from about $28 to about $240, so lambda = 1 already weighs risk heavily against the $28 generics.
 * **Same-factory names are interchangeable.** Gland and BPI ship the same factory's product, so the 30% belongs to the

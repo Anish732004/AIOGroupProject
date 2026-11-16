@@ -249,7 +249,7 @@
     }).join('');
     const sameFactory = A.factory_group === B.factory_group;
     return head('Compare', 'Two suppliers, side by side',
-      'Pick any two suppliers. The situation and risk dial above apply. "✓ better" marks the stronger side of each row.') +
+      'Pick any two suppliers. The situation and data setting above apply (the risk dial only affects the order split). "✓ better" marks the stronger side of each row.') +
       '<div class="grid g2"><label class="f">Supplier A' + pick('cmp-a', s.cmpA) + '</label><label class="f">Supplier B' + pick('cmp-b', s.cmpB) + '</label></div>' +
       (sameFactory ? '<div class="section">' + PS.banner('info', 'info', '<strong>Same factory.</strong> Both are made by ' + e(A.factory) + '. Ordering from both is not dual sourcing.') + '</div>' : '') +
       '<div class="section table-wrap"><table class="cmp"><thead><tr><th></th><th>' + e(A.name) + '</th><th>' + e(B.name) + '</th></tr></thead><tbody>' +
@@ -275,16 +275,16 @@
   };
 
   /* =============================================================== CONTROLS (suppliers + split pages) */
-  V.controls = function () {
-    const s = PS.state, m = PS.data.meta;
+  V.controls = function (page) {
+    const s = PS.state, m = PS.data.meta, dial = page === 'split';      // the dial only changes the order split, so it is shown only there
     return '<div class="controls"><div class="controls-row">' +
       '<div class="ctl"><span class="lab">Situation</span><div class="seg" role="group" aria-label="Situation">' +
       m.modes.map(function (md) {
         return '<button type="button" data-mode="' + e(md) + '" aria-pressed="' + (s.mode === md) + '">' + e(md) + '</button>';
       }).join('') + '</div></div>' +
-      '<div class="ctl"><label class="lab" for="lam">Risk dial: <span id="lam-val">' + s.lam.toFixed(2) + '</span></label>' +
-      '<input id="lam" type="range" min="0" max="3" step="0.25" value="' + s.lam + '">' +
-      '<div class="range-ends"><span>Cheapest</span><span>Safest</span></div></div>' +
+      (dial ? '<div class="ctl"><label class="lab" for="lam">Risk dial: <span id="lam-val">' + s.lam.toFixed(2) + '</span></label>' +
+        '<input id="lam" type="range" min="0" max="3" step="0.25" value="' + s.lam + '" data-tip="Only changes the order split, not the ranking: how much the split pays for safety. 0 ignores risk; above 0 it prefers higher-ranked suppliers." tabindex="0">' +
+        '<div class="range-ends"><span>Cheapest</span><span>Safest</span></div></div>' : '') +
       '<details class="adv ctl"' + (s.ent > 0 ? ' open' : '') + '><summary>Advanced</summary>' +
       '<label class="lab" for="ent">Let the data adjust the weights: <span id="ent-val">' + Math.round(100 * s.ent) + '%</span></label>' +
       '<input id="ent" type="range" min="0" max="0.5" step="0.1" value="' + s.ent + '">' +
@@ -397,11 +397,19 @@
   }
 
   /* =============================================================== ORDER SPLIT */
+  function m_lambdas() { return PS.data.meta.lambdas; }
+
   V.split = function () {
     const d = PS.data, s = PS.state, sc = PS.stressed(), st = splitStats(sc), mode = d.modes[s.mode], crit = PS.criteria();
     const notes = [];
     if (s.outage && s.outage !== 'none') notes.push(disasterNote(s.outage));
     if (sc.spot > 0.5) notes.push(PS.banner('crit', 'alert', '<strong>Emergency purchase needed.</strong> The approved suppliers cannot cover ' + PS.num(sc.spot) + ' vials under the rules.'));
+    if (s.lam > 0) {
+      const cur = PS.stressed(), positive = m_lambdas().filter(function (l) { return l > 0; });
+      const flat = positive.every(function (l) { return PS.sameSplit(cur, PS.stressed(undefined, s.mode, l, s.ent)); });
+      if (flat) notes.push(PS.banner('info', 'info', '<strong>Moving the dial above 0 does not change this split.</strong> The suppliers that share a price (the generics' + (PS.isSyn() ? ' differ only by cents of freight' : ' all cost the same') +
+        ') are ranked the same way at any positive dial, so the share limits decide the order. The dial only matters between 0 (ignore risk) and any higher value.'));
+    }
     if (s.lam === 0) notes.push(PS.banner('warn', 'warn', '<strong>The risk dial is at 0, so the split ignores risk.</strong> All generic suppliers cost the same, so the choice among them is simply alphabetical. Raise the dial to let the ranking guide the order.'));
     if (s.mode !== 'Normal') {
       const base = PS.scenario('Normal'), same = PS.sameSplit(sc, base);
@@ -449,7 +457,7 @@
     }).join('') + '</tbody></table></div>';
 
     return head('Order split', 'How to split this month\'s order',
-      'The split spreads ' + PS.num(d.meta.demand) + ' vials across independent factories, favouring higher-ranked suppliers while obeying the plan\'s share limits. Change the situation or the risk dial above to see it respond.') +
+      'The split spreads ' + PS.num(d.meta.demand) + ' vials across independent factories, favouring higher-ranked suppliers while obeying the plan\'s share limits. Change the situation above, or set the risk dial to 0 and back, to see it respond.') +
       stressPicker() +
       '<div class="stack">' + notes.join('') + '</div>' +
       '<div class="section grid g4">' + tile('Factories in the order', st.factories, st.two_ok ? 'meets the Tier 1 rule of at least 2 suppliers' : 'below the Tier 1 rule of at least 2 suppliers') +
@@ -460,7 +468,7 @@
       '<div class="section grid g-main"><div class="card"><h3>Recommended split, by factory</h3><p class="sub">Several names on the box can be one factory, so limits apply to the factory.</p>' + splitList(sc, d.meta.demand) + '</div>' +
       '<div class="card"><h3>What counts, and how much</h3><p class="sub">The weights behind the ranking in this situation.</p>' + weights +
       '<p class="small muted" style="margin-top:12px">Consistency check on the board\'s weights: ' + d.meta.ahp_consistency.CR + ' (must stay below 0.10).</p></div></div>' +
-      '<section class="section"><h2>Scores in each situation</h2><p class="sub">Overall score (higher is better) and rank for the current risk dial.</p>' + modeTable + '</section>' +
+      '<section class="section"><h2>Scores in each situation</h2><p class="sub">Overall score (higher is better) and rank in each situation. The risk dial does not change these; it only affects the order split above.</p>' + modeTable + '</section>' +
       '<section class="section"><h2>Approve and log</h2><p class="sub">Nothing is ordered until a person signs off. Each record is fingerprinted and chained to the one before it, so later changes can be detected.</p>' +
       '<div class="grid g-main"><form class="card stack" id="approve-form" novalidate>' +
       '<label class="f">Your initials or staff ID (no full names)<input type="text" id="ap-who" maxlength="12" autocomplete="off"></label>' +
