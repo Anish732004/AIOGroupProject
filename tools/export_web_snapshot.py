@@ -32,7 +32,7 @@ L3 = ROOT / "layer3_engines" / "outputs"
 WEB = ROOT / "web"
 SYN_DIR = ROOT / "synthetic"
 SYN_MATRIX = ROOT / "data" / "processed" / "suppliers_matrix_synthetic.csv"
-LAMBDAS = [round(0.25 * i, 2) for i in range(13)]          # 0 .. 3 in steps of 0.25
+LAMBDAS = [1.0]     # risk weight lambda: fixed at the plan's default 1.0; the dashboard has no dial (decision L1, 17 Nov 2026)
 ENTROPY = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5]                    # 0% .. 50%
 SOURCE_LABELS = {
     "scms": "USAID SCMS delivery history (training data)", "ghsc_psm": "USAID GHSC-PSM (optional, skipped)",

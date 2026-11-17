@@ -47,7 +47,7 @@ The same code as the real pipeline, with the synthetic values as inputs:
 * **Route (C5):** plan formula with the synthetic share.
 * **Order split:** probation comes from the synthetic delivery record, and capacity applies per factory.
 
-## Result (Normal mode, risk dial 1)
+## Result (Normal mode)
 
 5 established factories, so the plan's caps are 70% for an established factory and 15% for a new supplier:
 Hospira 37%, Fresenius 33% (its full capacity), Gland 15%, Apotex (Teyro factory) 15%. With every Indian factory

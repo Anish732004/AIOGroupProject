@@ -280,13 +280,6 @@
       "level": "judgement",
       "source": "Team setting",
       "note": "Sterility and data integrity count most."
-    },
-    {
-      "input": "Risk dial for the order split",
-      "feeds": "Order split",
-      "level": "judgement",
-      "source": "Set by the user",
-      "note": "How strongly the split avoids lower-ranked suppliers compared with saving money."
     }
   ],
   "limits": [
@@ -446,6 +439,12 @@
       "here": "Website: snapshot of 15 Nov 2026 plus a live FDA check button. Streamlit: live pull.",
       "synthetic": "Same as the real view.",
       "why": "A static website cannot call the FDA on every page load without slowing every reader; the live button does it on request."
+    },
+    {
+      "plan": "A risk weight lambda that sets how much the split pays for safety versus price (§4.4).",
+      "here": "Fixed at 1.0; there is no dial on the dashboard.",
+      "synthetic": "Same as the real view.",
+      "why": "All ten generic suppliers cost the same, so any positive setting gave the same split (only 0 differed); a dial that changes nothing was removed. It would matter once suppliers quote different prices."
     }
   ]
 }

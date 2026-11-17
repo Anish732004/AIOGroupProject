@@ -76,23 +76,14 @@ check('detail shows label evidence', (await ev('document.querySelector("#detail 
 await ev('const r = document.querySelector("tr[data-supplier=\\"HOSPIRA\\"]"); r.focus(); r.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))'); await sleep(200);
 check('keyboard Enter opens a detail', (await ev('document.querySelector("#detail h2").textContent')).includes('Hospira'));
 
-// the dial only changes the order split, so it is shown only on the split page
-await go('#/suppliers');
-check('risk dial is not shown on Suppliers (it does not change the ranking)', await ev('!document.getElementById("lam") && !!document.getElementById("ent")'));
-await go('#/compare');
-check('risk dial is not shown on Compare', await ev('!document.getElementById("lam")'));
-await go('#/split');
-check('risk dial is shown on the split page, with an explanation that positive values give the same split', await ev('!!document.getElementById("lam")') && (await ev('document.getElementById("view").textContent')).includes('does not change this split'));
+// there is no risk dial any more (it changed nothing); the data setting is still on all three pages
+for (const h of ['#/suppliers', '#/compare', '#/split']) { await go(h); check('no risk dial on ' + h, await ev('!document.getElementById("lam") && !document.getElementById("view").textContent.toLowerCase().includes("risk dial") && !!document.getElementById("ent")')); }
 await go('#/suppliers');
 // split: situation carries over, dial, notes
 await go('#/split');
 check('situation carries across pages', await ev('document.querySelector("[data-mode=Crisis]").getAttribute("aria-pressed") === "true"'));
 check('Crisis explanation is shown', (await ev('document.getElementById("view").textContent')).includes('ranks first but receives no order'));
-await ev('const s = document.getElementById("lam"); s.value = "0"; s.dispatchEvent(new Event("input", { bubbles: true }))'); await sleep(150);
-check('dial at 0 warns that risk is ignored', (await ev('document.getElementById("view").textContent')).includes('risk dial is at 0'));
-check('dial label updates', (await ev('document.getElementById("lam-val").textContent')) === '0.00');
-check('slider element survives re-render', await ev('!!document.getElementById("lam") && document.getElementById("lam").value === "0"'));
-await ev('const s = document.getElementById("lam"); s.value = "1"; s.dispatchEvent(new Event("input", { bubbles: true })); document.querySelector("[data-mode=Normal]").click()'); await sleep(150);
+await ev('document.querySelector("[data-mode=Normal]").click()'); await sleep(150);
 check('split shows 4 factories in Normal', (await ev('document.querySelectorAll(".bars.stacked .bar-row").length')) === 4);
 await ev('const s = document.getElementById("ent"); s.value = "0.5"; s.dispatchEvent(new Event("input", { bubbles: true }))'); await sleep(150);
 check('data-weight slider changes the weights shown', (await ev('document.getElementById("view").textContent')).includes("Board's everyday weight"));
@@ -192,8 +183,9 @@ const t1 = await ev('document.documentElement.getAttribute("data-theme")');
 await ev('document.getElementById("theme-toggle").click()');
 const t2 = await ev('document.documentElement.getAttribute("data-theme")');
 check(`theme toggle switches (${t1} -> ${t2})`, t1 !== t2 && ['dark', 'light'].includes(t1) && ['dark', 'light'].includes(t2));
-await go('#/split?mode=Cost Focus&dial=2');
-check('links can carry a situation', await ev('PS.state.mode === "Cost Focus" && PS.state.lam === 2'));
+await go('#/split?mode=Cost Focus&data=0.2');
+check('links can carry a situation', await ev('PS.state.mode === "Cost Focus" && PS.state.ent === 0.2'));
+await ev('PS.state.ent = 0'); await go('#/split');
 
 // live FDA check (needs the internet)
 await go('#/alerts');

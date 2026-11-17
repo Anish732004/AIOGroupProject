@@ -68,12 +68,12 @@ Losing any one factory changes nothing. Losing all 4 Indian factories keeps the 
 1,000 vials and the monthly cost rises from $279,546 to $2,607,054 at official US prices. If Fresenius's unstated factory
 is also in India, 1,000 vials must be bought in an emergency ($7,234,115 a month).
 
-**What does the risk dial do, and why does moving it change nothing?**
-It sets how much the order split pays for safety (0 = ignore risk, higher = prefer higher-ranked suppliers). It does not
-change the ranking. In our data the ten generic suppliers all cost the same ($28 a vial), so any positive setting prefers
-them in the same order and the 30%-per-factory share limits decide the split: the split at 0 differs from the split at
-0.25, and every setting from 0.25 to 3 gives the same result. The dial would matter once suppliers quote different
-prices, which real tender quotes would give.
+**The plan's order-split formula has a risk weight (lambda). Where is the risk dial?**
+We tested it and removed it from the dashboard. Lambda sets how much the split pays for safety versus price, and it is
+fixed at the plan's default of 1.0 in the model. In our data the ten generic suppliers all cost the same ($28 a vial), so
+any positive setting gave the same split and the 30%-per-factory share limits decided the order: a slider that changes
+nothing only invites confusion. It would matter, and could return as a dial, once suppliers quote different prices,
+which real tender quotes in the pilot would give.
 
 **Isn't synthetic data just made up?**
 Yes, and it is labelled as such. Every invented value comes from a stated range with a source (air-freight indices,

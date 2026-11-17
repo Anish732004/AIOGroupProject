@@ -30,6 +30,7 @@ from decision import engine as L4  # noqa: E402
 from decision.weights import CRITERIA, MODES  # noqa: E402
 from engines import c4_compliance  # noqa: E402
 
+LAM = 1.0     # risk weight in the order split: fixed at the plan's default (decision L1); no dial, because all generics share one price
 MATRIX_REAL = ROOT / "data" / "processed" / "suppliers_matrix.csv"
 MATRIX_SYNTHETIC = ROOT / "data" / "processed" / "suppliers_matrix_synthetic.csv"   # synthetic view (decision S4)
 SYN_INPUTS = ROOT / "synthetic" / "outputs" / "synthetic_inputs.csv"
@@ -98,10 +99,6 @@ with st.sidebar:
     mode = st.radio("Mode (one click, plan §4.2)", MODES, index=0,
                     help="Crisis: weight moves from cost to route exposure, and Hormuz exposure x1.5 (capped at 1). "
                          "Cost Focus: weight moves from route exposure to cost.")
-    lam = st.slider("Risk dial λ (team decision L1)", 0.0, 3.0, 1.0, 0.1,
-                    help="Affects only the order split (tab 3), not the ranking. How strongly the split avoids lower-ranked suppliers compared with saving money. "
-                         "Because all generics cost the same, the split is the same for every value above about 0.05; the share caps decide. "
-                         "λ = 1: a supplier's risk can add up to 100% of the average vial cost as a penalty.")
     ent = st.slider("Entropy (data-driven) weight share", 0, 50, 0, 5, format="%d%%",
                     help="Team decision L5: the board's tier weights drive the ranking (0%). The plan's 50/50 blend "
                          "proved unstable on this panel; slide to see its effect.") / 100
@@ -131,7 +128,7 @@ if synthetic:
             "Switch to *Real data only* in the sidebar for the evidence-only result.")
 
 ready, why = matrix_ready()
-r = decide(str(MATRIX), mode, lam, ent, (), mtime(MATRIX)) if ready else None
+r = decide(str(MATRIX), mode, LAM, ent, (), mtime(MATRIX)) if ready else None
 syn_in = csv(SYN_INPUTS).set_index("manufacturer_id") if synthetic and SYN_INPUTS.exists() else pd.DataFrame()
 m = csv(MATRIX).set_index("manufacturer_id") if ready else pd.DataFrame()
 
@@ -289,7 +286,7 @@ with tab3:
     if r is None:
         st.info("No scores yet.")
     else:
-        st.subheader(f"Recommended order split · {r['demand']:,} vials / month · {mode} mode · λ = {lam}")
+        st.subheader(f"Recommended order split · {r['demand']:,} vials / month · {mode} mode")
         mfull = csv(MATRIX)
         outs = L4.stress_outages(mfull)
         me = m[m["eligible_for_ranking"].astype(bool)]                     # rankable makers only (8 factories)
@@ -301,7 +298,7 @@ with tab3:
         base = r
         if outage != "none":
             grp = next(o["groups"] for o in outs if o["key"] == outage)
-            r = decide(str(MATRIX), mode, lam, ent, tuple(grp), mtime(MATRIX))
+            r = decide(str(MATRIX), mode, LAM, ent, tuple(grp), mtime(MATRIX))
             dd, bd = r["diagnostics"], base["diagnostics"]
             msg = (f"**{label[outage]} offline.** Scores and ranking do not change (a disaster says nothing about quality); "
                    f"only the split re-solves. Emergency purchase: **{dd['spot_buy_vials']:,.0f} vials**. Monthly cost "
@@ -310,7 +307,7 @@ with tab3:
             (st.error if dd["spot_buy_vials"] > 0.5 else st.warning)(msg)
             worst = next((o for o in outs if o["kind"] == "country_worst"), None)
             if outage == "COUNTRY_INDIA" and worst:
-                wd = decide(str(MATRIX), mode, lam, ent, tuple(worst["groups"]), mtime(MATRIX))["diagnostics"]
+                wd = decide(str(MATRIX), mode, LAM, ent, tuple(worst["groups"]), mtime(MATRIX))["diagnostics"]
                 st.caption(f"Caveat: Fresenius's factory country is not stated. If it is also in India: "
                            f"{wd['spot_buy_vials']:,.0f} emergency vials and {usd(wd['monthly_spend_usd'])} a month.")
         al = r["allocation"]
@@ -343,7 +340,7 @@ with tab3:
             st.dataframe(sel, hide_index=True, width="stretch")
 
         st.subheader("Normal vs Crisis vs Cost Focus")
-        comp = pd.DataFrame({md: decide(str(MATRIX), md, lam, ent, (), mtime(MATRIX))["ranking"]["S"] for md in MODES})
+        comp = pd.DataFrame({md: decide(str(MATRIX), md, LAM, ent, (), mtime(MATRIX))["ranking"]["S"] for md in MODES})
         comp.insert(0, "Supplier", r["ranking"].reindex(comp.index)["labeler_name_fda"])
         st.dataframe(comp.sort_values(mode, ascending=False), width="stretch",
                      column_config={md: st.column_config.NumberColumn(md, format="%.3f") for md in MODES})
@@ -373,7 +370,7 @@ with tab3:
                 rec = audit.append(AUDIT_LOG, {
                     "approver": who.strip(), "decision": decision, "reason": note.strip(),
                     "data_view": "synthetic" if synthetic else "real", "stress_test": outage, "mode": mode,
-                    "lambda": lam, "entropy_share": ent, "demand_vials": r["demand"],
+                    "entropy_share": ent, "demand_vials": r["demand"],
                     "weights_used": r["weights"]["Used for ranking"].round(4).to_dict(),
                     "split_vials": {k: v for k, v in sel.set_index("manufacturer_id")["vials"].items()},
                     "spot_buy_vials": r["diagnostics"]["spot_buy_vials"],
@@ -386,7 +383,7 @@ with tab3:
             (st.success if ok else st.error)(f"Audit trail check: {msg}")
             lg = pd.DataFrame(log)
             st.dataframe(lg[[c for c in ["seq", "timestamp_utc", "approver", "decision", "data_view", "stress_test", "mode",
-                                         "lambda", "reason", "record_hash"] if c in lg]], hide_index=True, width="stretch")
+                                         "reason", "record_hash"] if c in lg]], hide_index=True, width="stretch")
             st.download_button("Download audit log (JSONL)", AUDIT_LOG.read_bytes(), "audit_log.jsonl",
                                "application/json")
 

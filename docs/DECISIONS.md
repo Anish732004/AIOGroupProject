@@ -42,7 +42,7 @@ Every number that feeds a score must fall into one of three levels:
 
 | ID | Question | Decision |
 |---|---|---|
-| L1 | Risk dial λ in the order-split cost (the plan gives no value) | Slider in the cockpit, default 1.0; every approval records the λ used |
+| L1 | Risk dial λ in the order-split cost (the plan gives no value) | Default 1.0. **Revised 17 Nov 2026: slider removed from the website and the cockpit.** All ten generics share one price, so every λ above about 0.05 gave the same split; λ stays 1.0 in the engine and can return as a dial once suppliers quote different prices |
 | L2 | 5% minimum for a "new" (probation) supplier | Only if chosen: a maker gets 0, or between 5% and its cap (yes/no choice inside the maths) |
 | L3 | Per-supplier caps for shared factories | Per factory: Teyro + Apotex + Natco share one cap; Gland + BPI share one cap |
 | L4 | What the Streamlit link opens | The plan's 4-tab cockpit, with the Layer 1 data console as a fifth "Data pipeline" tab |

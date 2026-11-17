@@ -11,7 +11,7 @@ python run_decision.py --synthetic   # synthetic view (decision S4) -> outputs/s
 python -m pytest -q               # 16 tests
 ```
 
-The cockpit (`streamlit_app.py`, tab 3) runs the same engine live with the mode button and the λ and entropy sliders.
+The cockpit (`streamlit_app.py`, tab 3) runs the same engine live with the mode button and the entropy slider (lambda is fixed at 1.0).
 
 ## What it does
 
@@ -53,9 +53,10 @@ Read this honestly on the slides:
 * **Crisis mode changes the ranking but not the split.** With cost weight at 0, Avyxa (lowest route exposure, but
   about 84 times the price) moves from rank 6 to rank 1, and Accord falls to S = 0. The split is unchanged because the
   plan's order-split objective still weighs landed cost, so Avyxa receives no order. The cockpit says so explicitly.
-* **The risk dial has a visible effect only between 0 and any positive value.** All ten generics share one price, so
-  every dial setting above about 0.05 ranks them the same way and the share caps decide (real view: dial 0 gives
-  Accord/Apotex/BPI/Eugia, every higher setting gives Apotex/BPI/Teva/Hospira). It would matter with real tender quotes.
+* **No risk dial on the dashboards (decision L1, revised 17 Nov 2026).** All ten generics share one price, so every
+  lambda above about 0.05 ranks them the same way and the share caps decide (real view: lambda 0 gives
+  Accord/Apotex/BPI/Eugia, every higher value gives Apotex/BPI/Teva/Hospira). A control that changes nothing was
+  removed; lambda stays 1.0 in the engine (`run_decision.py --lambda` still sets it). It would matter with real tender quotes.
 * **The risk penalty is scaled by the mean cost of all rankable makers** (plan formula). Avyxa's price lifts that mean
   from about $28 to about $240, so lambda = 1 already weighs risk heavily against the $28 generics.
 * **Same-factory names are interchangeable.** Gland and BPI ship the same factory's product, so the 30% belongs to the

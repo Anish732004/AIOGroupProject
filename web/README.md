@@ -67,5 +67,5 @@ If you change the small script inside `index.html`, update its `sha256-…` valu
 `tools/test_web.mjs` fails and prints the new value if they disagree.
 
 Handy links for a presentation: add the situation to the address, e.g.
-`/#/split?mode=Crisis`, `/#/split?mode=Cost Focus&dial=2`, `/#/suppliers?supplier=ACCORD HEALTHCARE`,
+`/#/split?mode=Crisis`, `/#/split?mode=Cost Focus&data=0.2`, `/#/suppliers?supplier=ACCORD HEALTHCARE`,
 `/#/compare?a=APOTEX&b=TEYRO LABS`, `?theme=dark`. The site is tested in Chrome.

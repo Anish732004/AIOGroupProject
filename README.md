@@ -45,7 +45,7 @@ FDA_DD_KEY = "..."
 1. **Supplier scorecard & SHAP**: ranking, the five marks, "no data" flags, and per supplier the top-3 delivery-risk
    drivers, what the compliance mark is made of, and notes about the company's other plants (never scored).
 2. **Live shortage alerts**: openFDA carboplatin shortages (snapshot plus a live check button).
-3. **Crisis simulator & order split**: one-click Normal / Crisis / Cost Focus, λ and entropy sliders, the natural-disaster
+3. **Crisis simulator & order split**: one-click Normal / Crisis / Cost Focus, the entropy slider, the natural-disaster
    stress test, the split by factory with the warm-backup share, and **Approve & log** to a tamper-evident audit trail (each record carries the previous record's fingerprint).
 4. **NLP: letters & contracts**: warning-letter classifier results, and the contract clause reader (demo only; the
    contracts are synthetic and not scored).

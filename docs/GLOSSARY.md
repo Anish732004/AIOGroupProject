@@ -261,7 +261,7 @@ late more often than EXW ones (13% vs 5%), so that assumption alone moves the la
 | **Feasible / infeasible** | Whether any split exists that obeys all the rules. |
 | **Slack variable** | A safety valve. Ours is the emergency spot buy, so the maths always has an answer. |
 | **Penalty M (big-M)** | A huge made-up cost on the spot buy, so it is used only as a last resort. |
-| **Lambda (λ)** | A dial that sets how much the split cares about risk compared with cost. |
+| **Lambda (λ)** | The weight the order split puts on risk compared with cost. Fixed at 1.0 (the plan's default); there is no dial on the dashboard, because all generics cost the same and changing it made no difference. |
 | **Binary variable** | A yes-or-no choice inside the maths, such as "is this supplier used at all?" |
 | **Concentration cap** | The maximum share one supplier may get. |
 | **70/20/10** | The plan's example split: main supplier, backup, trial supplier. It needs a supplier with its own delivery record. In the real view all suppliers are new, so the plan's rules cap each factory at 30% (split 30/30/30/10); in the synthetic view 5 suppliers are established and the split is 37/33/15/15. |

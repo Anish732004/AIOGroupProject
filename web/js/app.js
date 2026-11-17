@@ -35,7 +35,6 @@
     if (force || !controls.firstChild) { controls.innerHTML = PS.views.controls(route()[2]); return; }
     const s = PS.state;                                    // update in place so a slider keeps focus while dragged
     controls.querySelectorAll('[data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === s.mode)); });
-    const lv = document.getElementById('lam-val'); if (lv) lv.textContent = s.lam.toFixed(2);
     document.getElementById('ent-val').textContent = Math.round(100 * s.ent) + '%';
     document.getElementById('mode-note').textContent = controls.querySelector('[data-mode][aria-pressed="true"]') ? MODE_NOTES[s.mode] : '';
   }
@@ -50,13 +49,12 @@
     document.title = r[1] + ' · PharmaShield GCC';
     if (r[2] === 'split') refreshAudit();
   }
-  /* links can carry a situation, e.g. #/split?mode=Crisis&dial=1.5&data=0.2 (handy for a presentation) */
+  /* links can carry a situation, e.g. #/split?mode=Crisis&data=0.2 (handy for a presentation) */
   function applyLinkSettings() {
     const q = new URLSearchParams((location.hash.split('?')[1] || '')), m = PS.data.meta, s = PS.state;
     if (q.get('view') === 'synthetic' || q.get('view') === 'real') PS.setView(q.get('view'));
-    const mode = q.get('mode'), dial = parseFloat(q.get('dial')), data = parseFloat(q.get('data'));
+    const mode = q.get('mode'), data = parseFloat(q.get('data'));
     if (mode && m.modes.indexOf(mode) >= 0) s.mode = mode;
-    if (m.lambdas.indexOf(dial) >= 0) s.lam = dial;
     if (m.entropy_shares.indexOf(data) >= 0) s.ent = data;
     if (q.get('supplier') && PS.byId(q.get('supplier'))) s.supplier = q.get('supplier');
     if (q.get('a') && PS.byId(q.get('a'))) s.cmpA = q.get('a');
@@ -91,7 +89,7 @@
     d.suppliers.forEach(function (sp, i) { if (sc.vials[i] > 0.5) split[sp.name] = sc.vials[i]; });
     PS.criteria().forEach(function (c, j) { weights[c.short] = sc.w[j]; });
     try {
-      await PSAudit.append({ approver: who, decision: decision, reason: reason, data_view: s.view, mode: s.mode, risk_dial: s.lam, entropy_share: s.ent,
+      await PSAudit.append({ approver: who, decision: decision, reason: reason, data_view: s.view, mode: s.mode, entropy_share: s.ent,
         demand_vials: d.meta.demand, split_vials: split,
         stress_test: s.outage && s.outage !== 'none' ? PS.outageLabel(PS.outage(s.outage)) + ' offline' : 'none', emergency_purchase_vials: sc.spot, weights: weights,
         snapshot_as_of: d.meta.as_of, score_table_sha256: d.meta.matrix_sha256 });
@@ -153,8 +151,7 @@
   });
   document.addEventListener('input', function (ev) {
     const t = ev.target;
-    if (t.id === 'lam') { PS.state.lam = parseFloat(t.value); renderControls(false); renderView(); }
-    else if (t.id === 'ent') { PS.state.ent = parseFloat(t.value); renderControls(false); renderView(); }
+    if (t.id === 'ent') { PS.state.ent = parseFloat(t.value); renderControls(false); renderView(); }
     else if (t.id === 'gloss-search') { document.getElementById('gloss-out').innerHTML = PS.views.glossaryList(t.value); }
     else if (t.id === 'contract-try') {
       const out = document.getElementById('contract-out');
